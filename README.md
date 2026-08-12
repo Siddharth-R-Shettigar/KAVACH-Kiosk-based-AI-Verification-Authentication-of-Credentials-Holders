@@ -1,1 +1,1 @@
-# PROVE-Photographic-Realism-Observation-Video-Evaluation
+# VEDA Verifiable Evidence & Digital Authenticity
