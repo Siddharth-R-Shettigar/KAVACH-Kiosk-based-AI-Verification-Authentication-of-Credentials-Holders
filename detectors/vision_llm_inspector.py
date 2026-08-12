@@ -23,12 +23,12 @@ def run_vision_llm_inspector(image_path):
         You are an expert digital forensics visual examiner. Inspect this image for AI generative artifacts:
         1. Human anatomy: count fingers, check hand symmetry, teeth structure, and ear geometry.
         2. Scene logic & semantic sanity: shadows, atmospheric consistency, object perspective, text/logo legibility.
-        
+
         Respond STRICTLY with a raw JSON object (no markdown, no backticks):
         {"score": <float between 0.0 for perfectly natural real photo to 1.0 for synthetic AI>, "explanation": "<1-2 sentence plain text verdict>"}
         """
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
         payload = {
             "contents": [{
                 "parts": [
@@ -40,8 +40,18 @@ def run_vision_llm_inspector(image_path):
 
         res = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
         res_data = res.json()
-        
+
+        if "candidates" not in res_data:
+            # Show the real API error instead of crashing on a missing key
+            return {
+                "detector_name": "vision_llm_sanity_analysis",
+                "score": 0.5,
+                "confidence": "low",
+                "explanation": f"Gemini API returned no candidates: {json.dumps(res_data)[:300]}"
+            }
+
         raw_text = res_data['candidates'][0]['content']['parts'][0]['text'].strip()
+        raw_text = raw_text.replace("```json", "").replace("```", "").strip()
         parsed = json.loads(raw_text)
 
         return {

@@ -26,12 +26,14 @@ AI-generated/manipulated, or inconclusive — and why, citing the 2-3 most impor
 of evidence.
 """
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
     try:
         res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
         res_data = res.json()
+        if "candidates" not in res_data:
+            return f"LLM summary generation failed — Gemini API returned: {json.dumps(res_data)[:300]}"
         return res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
     except Exception as e:
         return f"LLM summary generation failed: {e}"

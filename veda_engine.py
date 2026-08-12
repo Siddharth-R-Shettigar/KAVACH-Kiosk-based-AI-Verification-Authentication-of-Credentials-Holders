@@ -34,6 +34,8 @@ run_weather_detector = _safe_import("detectors.weather_detector", "run_weather_d
 run_inpainting_detector = _safe_import("detectors.inpainting_detector", "run_inpainting_detector")
 run_vision_llm_inspector = _safe_import("detectors.vision_llm_inspector", "run_vision_llm_inspector")
 run_reverse_search = _safe_import("detectors.reverse_search_detector", "run_reverse_search")
+run_audio_spoof_detector = _safe_import("detectors.audio_spoof_detector", "run_audio_spoof_detector")
+run_video_optical_flow = _safe_import("detectors.video_optical_flow", "run_video_optical_flow")
 
 
 def analyze_media(image_path):
@@ -53,7 +55,6 @@ def analyze_media(image_path):
         (run_hf_ai_detector, 2.0, False),
         (run_resampling_detector, 1.5, False),
         (run_ela_detector, 1.0, False),
-        (run_sherloq_noise, 1.0, False),
         (run_histogram_detector, 0.8, False),
         (run_frequency_detector, 0.8, False),
         (run_copy_move_detector, 1.0, False),
@@ -91,7 +92,7 @@ def analyze_media(image_path):
 
         results.append(res)
 
-        if weight > 0.0 and "score" in res:
+        if weight > 0.0 and "score" in res and res.get("confidence") != "low":
             weighted_score_sum += res["score"] * weight
             total_weight += weight
 
@@ -111,10 +112,74 @@ def analyze_media(image_path):
         "detector_signals": results
     }
 
+def analyze_video(video_path):
+    if not os.path.exists(video_path):
+        return {"error": f"File {video_path} not found."}
+    if run_video_optical_flow is None:
+        return {"error": "video_optical_flow detector failed to load."}
+
+    result = run_video_optical_flow(video_path)
+    score = result.get("score", 0.5)
+    synthetic_prob = int(round(score * 100))
+    authentic_prob = max(0, 100 - synthetic_prob)
+
+    return {
+        "engine": "VEDA (Verifiable Evidence & Digital Authenticity)",
+        "file_analyzed": os.path.basename(video_path),
+        "probabilities": {
+            "authentic_capture": f"{authentic_prob}%",
+            "synthetic_ai_generated": f"{synthetic_prob}%"
+        },
+        "overall_confidence": result.get("confidence", "low"),
+        "active_detectors_evaluated": 1,
+        "detector_signals": [result]
+    }
+
+
+def analyze_audio(audio_path):
+    if not os.path.exists(audio_path):
+        return {"error": f"File {audio_path} not found."}
+    if run_audio_spoof_detector is None:
+        return {"error": "audio_spoof_detector failed to load."}
+
+    result = run_audio_spoof_detector(audio_path)
+    score = result.get("score", 0.5)
+    synthetic_prob = int(round(score * 100))
+    authentic_prob = max(0, 100 - synthetic_prob)
+
+    return {
+        "engine": "VEDA (Verifiable Evidence & Digital Authenticity)",
+        "file_analyzed": os.path.basename(audio_path),
+        "probabilities": {
+            "authentic_capture": f"{authentic_prob}%",
+            "synthetic_ai_generated": f"{synthetic_prob}%"
+        },
+        "overall_confidence": result.get("confidence", "low"),
+        "active_detectors_evaluated": 1,
+        "detector_signals": [result]
+    }
+
+
+def analyze_file(path):
+    """Routes any uploaded file to the right pipeline based on its extension."""
+    ext = os.path.splitext(path)[1].lower()
+    image_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
+    video_exts = {".mp4", ".avi", ".mov"}
+    audio_exts = {".wav"}  # add ".mp3" here only if you do the MP3 upgrade below
+
+    if ext in image_exts:
+        return analyze_media(path)
+    elif ext in video_exts:
+        return analyze_video(path)
+    elif ext in audio_exts:
+        return analyze_audio(path)
+    else:
+        return {"error": f"Unsupported file type: {ext}"}
+    
 
 if __name__ == "__main__":
     target = sys.argv[1] if len(sys.argv) > 1 else "DSC_0153.JPG"
-    report = analyze_media(target)
+    report = analyze_file(target)
 
     try:
         from llm_fusion import generate_human_summary
@@ -123,3 +188,11 @@ if __name__ == "__main__":
         report["human_summary"] = f"(AI summary unavailable: {e})"
 
     print(json.dumps(report, indent=2))
+
+    # Save a copy of every analysis to disk, one file per case
+    os.makedirs("case_logs", exist_ok=True)
+    safe_name = os.path.splitext(os.path.basename(target))[0]
+    log_path = os.path.join("case_logs", f"{safe_name}_report.json")
+    with open(log_path, "w") as f:
+        json.dump(report, f, indent=2)
+    print(f"\nSaved case log to {log_path}", file=sys.stderr)

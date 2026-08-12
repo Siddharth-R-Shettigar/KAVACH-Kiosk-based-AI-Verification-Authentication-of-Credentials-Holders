@@ -5,32 +5,32 @@ import numpy as np
 from scipy.io import wavfile
 
 def run_audio_spoof_detector(audio_path):
-    if not os.path.exists(audio_path) or not audio_path.lower().endswith(('.wav', '.mp3')):
+    # NOTE: only .wav is actually supported right now. scipy.io.wavfile cannot
+    # read .mp3 despite what the original code implied — if you need mp3 support,
+    # see the upgrade note at the bottom of this document before relying on this.
+    if not os.path.exists(audio_path) or not audio_path.lower().endswith('.wav'):
         return {
             "detector_name": "audio_voice_clone_analysis",
             "score": 0.1,
             "confidence": "low",
-            "explanation": "Input file is not a supported audio format. Audio spoof analysis bypassed."
+            "explanation": "Input file is not a supported audio format (.wav only for now). Audio spoof analysis bypassed."
         }
 
     try:
         sample_rate, data = wavfile.read(audio_path)
         if len(data.shape) > 1:
-            data = data[:, 0]  # Take single mono channel
+            data = data[:, 0]  # take one channel if stereo
 
-        # Calculate Zero Crossing Rate (ZCR)
         zero_crossings = np.where(np.diff(np.signbit(data)))[0]
         zcr = len(zero_crossings) / float(len(data))
 
-        # Calculate high frequency spectral power ratio (>8kHz)
         fft_spectrum = np.abs(np.fft.rfft(data))
         freqs = np.fft.rfftfreq(len(data), 1.0 / sample_rate)
-        
+
         hf_energy = np.sum(fft_spectrum[freqs > 8000])
         total_energy = np.sum(fft_spectrum) + 1e-5
         hf_ratio = float(hf_energy / total_energy)
 
-        # Neural voice models often feature unnatural zero-crossing frequency bounds or hard spectral cutoffs
         score = 0.80 if hf_ratio < 0.005 or zcr > 0.35 else 0.15
 
         return {
