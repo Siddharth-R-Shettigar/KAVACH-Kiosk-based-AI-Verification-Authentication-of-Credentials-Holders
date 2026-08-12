@@ -1,0 +1,11 @@
+pillow
+opencv-python-headless
+numpy
+imagehash
+PyExifTool
+c2pa-python
+transformers
+torch
+requests
+scipy
+python-dotenv

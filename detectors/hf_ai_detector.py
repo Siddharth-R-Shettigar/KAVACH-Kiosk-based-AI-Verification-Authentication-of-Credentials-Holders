@@ -2,11 +2,17 @@ import os
 from PIL import Image
 from transformers import pipeline
 
-# Ensemble of lightweight, pre-trained AI image detectors
 MODEL_CHECKPOINTS = [
     "umm-maybe/AI-image-detector",
     "Organika/sdxl-detector"
 ]
+
+_PIPELINE_CACHE = {}
+
+def _get_pipeline(model_name):
+    if model_name not in _PIPELINE_CACHE:
+        _PIPELINE_CACHE[model_name] = pipeline("image-classification", model=model_name)
+    return _PIPELINE_CACHE[model_name]
 
 def run_hf_ai_detector(image_path):
     if not os.path.exists(image_path):
@@ -23,16 +29,15 @@ def run_hf_ai_detector(image_path):
 
         for model_name in MODEL_CHECKPOINTS:
             try:
-                pipe = pipeline("image-classification", model=model_name)
+                pipe = _get_pipeline(model_name)
                 predictions = pipe(image)
-                
-                # Extract score for fake/ai-generated label
+
                 fake_score = 0.0
                 for pred in predictions:
                     label = pred["label"].lower()
                     if "artificial" in label or "fake" in label or "ai" in label or "generator" in label:
                         fake_score = max(fake_score, float(pred["score"]))
-                
+
                 scores.append(fake_score)
             except Exception:
                 continue
