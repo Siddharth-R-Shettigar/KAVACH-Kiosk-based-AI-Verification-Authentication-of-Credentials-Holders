@@ -1,4 +1,6 @@
 .env
+forensic/
 __pycache__/
+uploads/
+temp_frames/
 *.pyc
-.venv/
