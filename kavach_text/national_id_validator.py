@@ -140,7 +140,6 @@ def validate_national_id(id_type: str, id_value: str) -> dict:
 
 if __name__ == "__main__":
     import json
-    # Test Aadhaar
-    print(json.dumps(validate_national_id("aadhaar", "2345 6789 0123"), indent=2))
-    # Test PAN
-    print(json.dumps(validate_national_id("pan", "ABCDE1234F"), indent=2))
+    
+    # Test valid PAN structure (Individual 'P')
+    print(json.dumps(validate_national_id("pan", "ABCPE1234F"), indent=2))
