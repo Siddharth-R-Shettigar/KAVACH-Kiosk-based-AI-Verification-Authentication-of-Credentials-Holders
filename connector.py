@@ -18,7 +18,9 @@ def analyze_image(image_path, preprocess=None):
 
 if __name__ == "__main__":
     import json
+    import os
     import sys
-    path = sys.argv[1] if len(sys.argv) > 1 else "veda/test_images/real/20260804_073446.jpg"
+    default_path = os.path.join("test_images", "real", "20260804_073446.jpg")
+    path = sys.argv[1] if len(sys.argv) > 1 else default_path
     result = analyze_image(path)
     print(json.dumps(result, indent=2))

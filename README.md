@@ -1,1 +1,1 @@
-# VEDA Verifiable Evidence & Digital Authenticity
+# KAVACH Verifiable Evidence & Digital Authenticity

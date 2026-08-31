@@ -1,11 +1,8 @@
 # bridge.py
-# Connects Siddharth's VEDA engine to your AI reasoning layer
+# Connects the KAVACH engine to the AI reasoning layer
 
 import sys
 import os
-
-# Tell Python where Siddharth's code lives
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'veda'))
 
 from kavach_engine import analyze_media # type: ignore
 
@@ -19,7 +16,7 @@ def get_all_scores(image_path):
         report = analyze_media(image_path)
 
         if "error" in report:
-            return _fallback_scores(f"VEDA engine error: {report['error']}")
+            return _fallback_scores(f"KAVACH engine error: {report['error']}")
 
         # Build lookup by detector name
         signals = report.get("detector_signals", [])
@@ -129,7 +126,8 @@ def _fallback_scores(reason):
 
 # Test directly
 if __name__ == "__main__":
-    test_path = sys.argv[1] if len(sys.argv) > 1 else "veda/test_images/real/20260804_073446.jpg"
+    default_path = os.path.join("test_images", "real", "20260804_073446.jpg")
+    test_path = sys.argv[1] if len(sys.argv) > 1 else default_path
     result = get_all_scores(test_path)
     import json
     print(json.dumps(result, indent=2))
