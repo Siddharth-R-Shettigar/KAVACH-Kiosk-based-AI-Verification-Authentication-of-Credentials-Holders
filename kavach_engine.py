@@ -17,7 +17,6 @@ def _safe_import(module_path, func_name):
 run_exif_detector = _safe_import("detectors.exif_detector", "run_exif_detector")
 run_c2pa_detector = _safe_import("detectors.c2pa_detector", "run_c2pa_detector")
 run_ela_detector = _safe_import("detectors.ela_detector", "run_ela_detector")
-run_sherloq_noise = _safe_import("detectors.sherloq_noise", "run_sherloq_noise")
 run_jpeg_ghost_detector = _safe_import("detectors.jpeg_ghost", "run_jpeg_ghost_detector")
 run_phash_detector = _safe_import("detectors.phash_detector", "run_phash_detector")
 run_histogram_detector = _safe_import("detectors.histogram_detector", "run_histogram_detector")
@@ -36,6 +35,7 @@ run_vision_llm_inspector = _safe_import("detectors.vision_llm_inspector", "run_v
 run_reverse_search = _safe_import("detectors.reverse_search_detector", "run_reverse_search")
 run_audio_spoof_detector = _safe_import("detectors.audio_spoof_detector", "run_audio_spoof_detector")
 run_video_optical_flow = _safe_import("detectors.video_optical_flow", "run_video_optical_flow")
+run_face_verification = _safe_import("detectors.face_verification_engine", "run_face_verification")
 
 
 def analyze_media(image_path):
