@@ -1,5 +1,5 @@
 import os
-from veda_engine import analyze_media
+from kavach_engine import analyze_media
 
 TEST_FOLDER = "test_images"
 

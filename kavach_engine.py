@@ -101,7 +101,7 @@ def analyze_media(image_path):
     authentic_prob = max(0, 100 - synthetic_prob)
 
     return {
-        "engine": "VEDA (Verifiable Evidence & Digital Authenticity)",
+        "engine": "KAVACH (Verifiable Evidence & Digital Authenticity)",
         "file_analyzed": os.path.basename(image_path),
         "probabilities": {
             "authentic_capture": f"{authentic_prob}%",
@@ -124,7 +124,7 @@ def analyze_video(video_path):
     authentic_prob = max(0, 100 - synthetic_prob)
 
     return {
-        "engine": "VEDA (Verifiable Evidence & Digital Authenticity)",
+        "engine": "KAVACH (Verifiable Evidence & Digital Authenticity)",
         "file_analyzed": os.path.basename(video_path),
         "probabilities": {
             "authentic_capture": f"{authentic_prob}%",
@@ -148,7 +148,7 @@ def analyze_audio(audio_path):
     authentic_prob = max(0, 100 - synthetic_prob)
 
     return {
-        "engine": "VEDA (Verifiable Evidence & Digital Authenticity)",
+        "engine": "KAVACH (Verifiable Evidence & Digital Authenticity)",
         "file_analyzed": os.path.basename(audio_path),
         "probabilities": {
             "authentic_capture": f"{authentic_prob}%",
