@@ -7,7 +7,7 @@ import os
 # Tell Python where Siddharth's code lives
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'veda'))
 
-from veda_engine import analyze_media # type: ignore
+from kavach_engine import analyze_media # type: ignore
 
 
 def get_all_scores(image_path):
