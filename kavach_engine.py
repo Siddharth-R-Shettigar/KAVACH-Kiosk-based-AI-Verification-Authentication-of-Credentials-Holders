@@ -17,7 +17,6 @@ def _safe_import(module_path, func_name):
 run_exif_detector = _safe_import("detectors.exif_detector", "run_exif_detector")
 run_c2pa_detector = _safe_import("detectors.c2pa_detector", "run_c2pa_detector")
 run_ela_detector = _safe_import("detectors.ela_detector", "run_ela_detector")
-run_sherloq_noise = _safe_import("detectors.sherloq_noise", "run_sherloq_noise")
 run_jpeg_ghost_detector = _safe_import("detectors.jpeg_ghost", "run_jpeg_ghost_detector")
 run_phash_detector = _safe_import("detectors.phash_detector", "run_phash_detector")
 run_histogram_detector = _safe_import("detectors.histogram_detector", "run_histogram_detector")
@@ -27,15 +26,10 @@ run_copy_move_detector = _safe_import("detectors.copy_move_detector", "run_copy_
 run_blur_detector = _safe_import("detectors.blur_detector", "run_blur_detector")
 run_cfa_detector = _safe_import("detectors.cfa_detector", "run_cfa_detector")
 run_resampling_detector = _safe_import("detectors.resampling_detector", "run_resampling_detector")
-run_illuminant_detector = _safe_import("detectors.illuminant_detector", "run_illuminant_detector")
 run_quantization_detector = _safe_import("detectors.quantization_detector", "run_quantization_detector")
-run_geometry_detector = _safe_import("detectors.geometry_detector", "run_geometry_detector")
-run_weather_detector = _safe_import("detectors.weather_detector", "run_weather_detector")
 run_inpainting_detector = _safe_import("detectors.inpainting_detector", "run_inpainting_detector")
 run_vision_llm_inspector = _safe_import("detectors.vision_llm_inspector", "run_vision_llm_inspector")
-run_reverse_search = _safe_import("detectors.reverse_search_detector", "run_reverse_search")
-run_audio_spoof_detector = _safe_import("detectors.audio_spoof_detector", "run_audio_spoof_detector")
-run_video_optical_flow = _safe_import("detectors.video_optical_flow", "run_video_optical_flow")
+run_face_verification = _safe_import("detectors.face_verification_engine", "run_face_verification")
 
 
 def analyze_media(image_path):
@@ -112,67 +106,15 @@ def analyze_media(image_path):
         "detector_signals": results
     }
 
-def analyze_video(video_path):
-    if not os.path.exists(video_path):
-        return {"error": f"File {video_path} not found."}
-    if run_video_optical_flow is None:
-        return {"error": "video_optical_flow detector failed to load."}
-
-    result = run_video_optical_flow(video_path)
-    score = result.get("score", 0.5)
-    synthetic_prob = int(round(score * 100))
-    authentic_prob = max(0, 100 - synthetic_prob)
-
-    return {
-        "engine": "KAVACH (Verifiable Evidence & Digital Authenticity)",
-        "file_analyzed": os.path.basename(video_path),
-        "probabilities": {
-            "authentic_capture": f"{authentic_prob}%",
-            "synthetic_ai_generated": f"{synthetic_prob}%"
-        },
-        "overall_confidence": result.get("confidence", "low"),
-        "active_detectors_evaluated": 1,
-        "detector_signals": [result]
-    }
-
-
-def analyze_audio(audio_path):
-    if not os.path.exists(audio_path):
-        return {"error": f"File {audio_path} not found."}
-    if run_audio_spoof_detector is None:
-        return {"error": "audio_spoof_detector failed to load."}
-
-    result = run_audio_spoof_detector(audio_path)
-    score = result.get("score", 0.5)
-    synthetic_prob = int(round(score * 100))
-    authentic_prob = max(0, 100 - synthetic_prob)
-
-    return {
-        "engine": "KAVACH (Verifiable Evidence & Digital Authenticity)",
-        "file_analyzed": os.path.basename(audio_path),
-        "probabilities": {
-            "authentic_capture": f"{authentic_prob}%",
-            "synthetic_ai_generated": f"{synthetic_prob}%"
-        },
-        "overall_confidence": result.get("confidence", "low"),
-        "active_detectors_evaluated": 1,
-        "detector_signals": [result]
-    }
-
 
 def analyze_file(path):
     """Routes any uploaded file to the right pipeline based on its extension."""
     ext = os.path.splitext(path)[1].lower()
     image_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
-    video_exts = {".mp4", ".avi", ".mov"}
-    audio_exts = {".wav"}  # add ".mp3" here only if you do the MP3 upgrade below
+    
 
     if ext in image_exts:
         return analyze_media(path)
-    elif ext in video_exts:
-        return analyze_video(path)
-    elif ext in audio_exts:
-        return analyze_audio(path)
     else:
         return {"error": f"Unsupported file type: {ext}"}
     
