@@ -2,17 +2,17 @@
   "engine": "KAVACH (Verifiable Evidence & Digital Authenticity)",
   "file_analyzed": "1786592267418.jpg",
   "probabilities": {
-    "authentic_capture": "54%",
-    "synthetic_ai_generated": "46%"
+    "authentic_capture": "50%",
+    "synthetic_ai_generated": "50%"
   },
   "overall_confidence": "high",
   "active_detectors_evaluated": 19,
   "detector_signals": [
     {
       "detector_name": "exiftool",
-      "score": 0.5,
-      "confidence": "low",
-      "explanation": "Could not process metadata: \"exiftool\" is not found, on path or as absolute path"
+      "score": 0.85,
+      "confidence": "high",
+      "explanation": "No camera EXIF metadata found; image may be AI-generated or stripped."
     },
     {
       "detector_name": "c2pa",
