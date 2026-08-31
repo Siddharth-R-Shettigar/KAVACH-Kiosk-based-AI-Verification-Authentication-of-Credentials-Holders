@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2026-08-31T06:07:19.224701+00:00",
+    "id_tag": "ID002",
+    "detector_name": "duplicate_identity_check",
+    "score": 0.9999,
+    "confidence": "high",
+    "explanation": "HIGH RISK: Face matches an existing record under a different ID ('ID001') with similarity 0.9999, above the 0.85 duplicate-identity threshold.",
+    "status": "flagged"
+  },
+  {
+    "timestamp": "2026-08-31T06:07:19.225284+00:00",
+    "id_tag": "ID003",
+    "detector_name": "duplicate_identity_check",
+    "score": 0.0,
+    "confidence": "high",
+    "explanation": "No duplicate identity detected. Closest match under a different ID ('ID001') had similarity -0.0026, below the 0.85 threshold.",
+    "status": "passed"
+  },
+  {
+    "timestamp": "2026-08-31T06:07:19.227207+00:00",
+    "id_tag": "ID002",
+    "detector_name": "duplicate_identity_check",
+    "score": 0.9999,
+    "confidence": "high",
+    "explanation": "HIGH RISK: Face matches an existing record under a different ID ('ID001') with similarity 0.9999, above the 0.85 duplicate-identity threshold.",
+    "status": "flagged"
+  },
+  {
+    "timestamp": "2026-08-31T06:07:19.227861+00:00",
+    "id_tag": "ID003",
+    "detector_name": "duplicate_identity_check",
+    "score": 0.0,
+    "confidence": "high",
+    "explanation": "No duplicate identity detected. Closest match under a different ID ('ID001') had similarity -0.0026, below the 0.85 threshold.",
+    "status": "passed"
+  }
+]

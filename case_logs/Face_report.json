@@ -1,0 +1,4 @@
+{
+  "error": "File test_images/fake/Face.webp not found.",
+  "human_summary": "GEMINI_API_KEY missing; skipping AI-generated summary."
+}
