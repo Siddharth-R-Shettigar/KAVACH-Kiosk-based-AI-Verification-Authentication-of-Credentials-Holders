@@ -9,3 +9,7 @@ torch
 requests
 scipy
 python-dotenv
+insightface
+onnxruntime
+easyocr
+pyzbar

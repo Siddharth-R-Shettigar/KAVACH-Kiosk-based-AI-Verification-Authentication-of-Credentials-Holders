@@ -46,6 +46,7 @@ classify_document = _safe_import("detectors.document_classifier", "classify_docu
 validate_document_fields = _safe_import("detectors.field_validator", "validate_document_fields")
 check_ocr_mrz_consistency = _safe_import("detectors.ocr_mrz_consistency", "check_ocr_mrz_consistency")
 check_qr_consistency = _safe_import("detectors.qr_barcode", "check_qr_consistency")
+validate_national_id = _safe_import("detectors.national_id_validator", "validate_national_id")
 
 
 def _confidence_str(value):
@@ -196,6 +197,37 @@ def _clean_mrz_candidate(text: str) -> str:
     t = "".join(c for c in t if c.isalnum() or c == "<")
     return t
 
+def _find_national_ids(ocr_text: str) -> list:
+    """
+    Best-effort: pull Aadhaar (12 digits) or PAN (ABCDE1234F) from OCR text.
+    Returns list of (id_type, id_value).
+    """
+    import re
+
+    found = []
+    if not ocr_text:
+        return found
+
+    text = ocr_text.upper()
+
+    # PAN: 5 letters + 4 digits + 1 letter
+    for m in re.finditer(r"\b([A-Z]{5}[0-9]{4}[A-Z])\b", text):
+        found.append(("pan", m.group(1)))
+
+    # Aadhaar: 12 digits (allow spaces/hyphens in source)
+    compact = re.sub(r"[\s-]", "", ocr_text)
+    for m in re.finditer(r"(?<!\d)([2-9]\d{11})(?!\d)", compact):
+        found.append(("aadhaar", m.group(1)))
+
+    # Deduplicate
+    seen = set()
+    out = []
+    for t, v in found:
+        key = (t, v)
+        if key not in seen:
+            seen.add(key)
+            out.append((t, v))
+    return out
 
 def _collect_mrz_lines(ocr_raw: dict) -> list:
     """
@@ -422,6 +454,53 @@ def analyze_media(image_path, live_image_path=None):
                 image_path,
                 ocr_fields_for_consistency,
                 detector_name="qr_barcode",
+                score_means_risk=False,
+            )
+        )
+
+    # ----- 6b) National ID (Aadhaar / PAN) when OCR finds one -----
+    national_hits = _find_national_ids(ocr_text)
+    if validate_national_id is not None and national_hits:
+        # Validate the first hit (or loop all if you prefer)
+        id_type, id_value = national_hits[0]
+        try:
+            raw = validate_national_id(id_type, id_value)
+            # Ensure standard keys for _normalize
+            if "score" not in raw:
+                raw = dict(raw)
+                raw["score"] = 1.0 if raw.get("status") == "passed" else 0.0
+            if "confidence" not in raw:
+                raw["confidence"] = "high"
+            if "detector_name" not in raw:
+                raw["detector_name"] = "national_id_validator"
+            signals.append(_normalize("national_id_validator", raw, score_means_risk=False))
+        except Exception as e:
+            signals.append(
+                _normalize(
+                    "national_id_validator",
+                    {
+                        "status": "failed",
+                        "score": 0.5,
+                        "confidence": "low",
+                        "explanation": str(e),
+                    },
+                    score_means_risk=False,
+                )
+            )
+    else:
+        signals.append(
+            _normalize(
+                "national_id_validator",
+                {
+                    "status": "unavailable",
+                    "score": 0.0,
+                    "confidence": "low",
+                    "explanation": (
+                        "No Aadhaar/PAN pattern found in OCR text."
+                        if not national_hits
+                        else "national_id_validator not loaded."
+                    ),
+                },
                 score_means_risk=False,
             )
         )
