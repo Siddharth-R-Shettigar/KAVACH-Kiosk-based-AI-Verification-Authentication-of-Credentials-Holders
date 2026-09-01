@@ -27,14 +27,16 @@ def run_blur_detector(image_path):
             "detector_name": "blur_sharpness_analysis",
             "score": score,
             "confidence": "medium",
-            "explanation": exp
+            "explanation": exp,
+            "status": "flagged" if score >= 0.4 else "passed"
         }
     except Exception as e:
         return {
             "detector_name": "blur_sharpness_analysis",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Blur analysis failed: {str(e)}"
+            "explanation": f"Blur analysis failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

@@ -20,7 +20,8 @@ def run_quantization_detector(image_path):
                 "detector_name": "jpeg_quantization_analysis",
                 "score": 0.6,
                 "confidence": "medium",
-                "explanation": "Missing standard JPEG quantization tables."
+                "explanation": "Missing standard JPEG quantization tables.",
+                "status": "flagged"
             }
 
         # Check luminance table variance to detect non-standard software re-compression
@@ -35,7 +36,8 @@ def run_quantization_detector(image_path):
             "score": score,
             "confidence": "high",
             "explanation": f"JPEG quantization mean coefficient computed at {round(avg_q_val, 2)}." +
-                           (" Non-standard software re-compression matrix detected." if score > 0.5 else " Standard camera sensor hardware Q-table verified.")
+                           (" Non-standard software re-compression matrix detected." if score > 0.5 else " Standard camera sensor hardware Q-table verified."),
+            "status": "flagged" if score >= 0.4 else "passed"
         }
 
     except Exception as e:
@@ -43,7 +45,8 @@ def run_quantization_detector(image_path):
             "detector_name": "jpeg_quantization_analysis",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Quantization table inspection failed: {str(e)}"
+            "explanation": f"Quantization table inspection failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

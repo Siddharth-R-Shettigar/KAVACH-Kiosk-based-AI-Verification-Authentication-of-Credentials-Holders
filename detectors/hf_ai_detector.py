@@ -20,7 +20,8 @@ def run_hf_ai_detector(image_path):
             "detector_name": "hf_vision_transformer",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"File {image_path} not found."
+            "explanation": f"File {image_path} not found.",
+            "status": "failed"
         }
 
     try:
@@ -47,7 +48,8 @@ def run_hf_ai_detector(image_path):
                 "detector_name": "hf_vision_transformer",
                 "score": 0.5,
                 "confidence": "low",
-                "explanation": "Could not process image through Hugging Face pipelines."
+                "explanation": "Could not process image through Hugging Face pipelines.",
+                "status": "failed"
             }
 
         avg_synthetic_score = float(sum(scores) / len(scores))
@@ -56,7 +58,8 @@ def run_hf_ai_detector(image_path):
             "detector_name": "hf_vision_transformer",
             "score": round(avg_synthetic_score, 2),
             "confidence": "high",
-            "explanation": f"Ensemble of {len(scores)} Hugging Face Vision Transformers evaluated synthetic probability at {int(avg_synthetic_score * 100)}%."
+            "explanation": f"Ensemble of {len(scores)} Hugging Face Vision Transformers evaluated synthetic probability at {int(avg_synthetic_score * 100)}%.",
+            "status": "flagged" if score >= 0.4 else "passed"
         }
 
     except Exception as e:
@@ -64,5 +67,6 @@ def run_hf_ai_detector(image_path):
             "detector_name": "hf_vision_transformer",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"HF Vision Transformer error: {str(e)}"
+            "explanation": f"HF Vision Transformer error: {str(e)}",
+            "status": "failed"
         }

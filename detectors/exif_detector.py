@@ -14,14 +14,16 @@ def run_exif_detector(image_path):
             "detector_name": "exiftool",
             "score": 0.1 if has_camera_data else 0.85, # Higher score = more suspicious / likely synthetic
             "confidence": "high",
-            "explanation": "Original camera EXIF data detected." if has_camera_data else "No camera EXIF metadata found; image may be AI-generated or stripped."
+            "explanation": "Original camera EXIF data detected." if has_camera_data else "No camera EXIF metadata found; image may be AI-generated or stripped.",
+            "status": "passed" if has_camera_data else "flagged"
         }
     except Exception as e:
         return {
             "detector_name": "exiftool",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Could not process metadata: {str(e)}"
+            "explanation": f"Could not process metadata: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

@@ -27,14 +27,16 @@ def run_histogram_detector(image_path):
             "score": score,
             "confidence": "medium",
             "explanation": f"Color channel entropy computed at {round(mean_entropy, 2)} bits." +
-                           (" Potential color space anomaly detected." if score > 0.5 else " Standard natural RGB channel distribution.")
+                           (" Potential color space anomaly detected." if score > 0.5 else " Standard natural RGB channel distribution."),
+            "status": "flagged" if score >= 0.4 else "passed"
         }
     except Exception as e:
         return {
             "detector_name": "histogram_color_forensics",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Histogram analysis failed: {str(e)}"
+            "explanation": f"Histogram analysis failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

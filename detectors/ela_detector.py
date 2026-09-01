@@ -25,7 +25,8 @@ def run_ela_detector(image_path, quality=95):
             "detector_name": "ela_compression",
             "score": score,
             "confidence": "medium",
-            "explanation": f"Error Level Analysis computed pixel difference variance of {round(mean_diff, 2)}."
+            "explanation": f"Error Level Analysis computed pixel difference variance of {round(mean_diff, 2)}.",
+            "status": "flagged" if score >= 0.4 else "passed"
         }
 
     except Exception as e:
@@ -33,7 +34,8 @@ def run_ela_detector(image_path, quality=95):
             "detector_name": "ela_compression",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"ELA calculation failed: {str(e)}"
+            "explanation": f"ELA calculation failed: {str(e)}",
+            "status": "failed"
         }
     finally:
         if temp_filename and os.path.exists(temp_filename):

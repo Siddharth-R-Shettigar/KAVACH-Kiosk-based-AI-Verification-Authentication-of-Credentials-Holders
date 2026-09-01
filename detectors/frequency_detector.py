@@ -27,14 +27,16 @@ def run_frequency_detector(image_path):
             "score": score,
             "confidence": "medium",
             "explanation": f"FFT spectral power calculated at {round(high_freq_power, 2)} dB." +
-                           (" High-frequency grid noise detected." if score > 0.5 else " Standard continuous natural spectrum.")
+                           (" High-frequency grid noise detected." if score > 0.5 else " Standard continuous natural spectrum."),
+            "status": "flagged" if score >= 0.4 else "passed"
         }
     except Exception as e:
         return {
             "detector_name": "frequency_domain_fft",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Frequency domain transform failed: {str(e)}"
+            "explanation": f"Frequency domain transform failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

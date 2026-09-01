@@ -30,7 +30,8 @@ def run_resampling_detector(image_path):
             "detector_name": "resampling_interpolation_analysis",
             "score": score,
             "confidence": "medium",
-            "explanation": exp
+            "explanation": exp,
+            "status": "flagged" if score >= 0.4 else "passed"
         }
 
     except Exception as e:
@@ -38,7 +39,8 @@ def run_resampling_detector(image_path):
             "detector_name": "resampling_interpolation_analysis",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Resampling evaluation failed: {str(e)}"
+            "explanation": f"Resampling evaluation failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

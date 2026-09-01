@@ -12,7 +12,8 @@ def run_vision_llm_inspector(image_path):
             "detector_name": "vision_llm_sanity_analysis",
             "score": 0.5,
             "confidence": "low",
-            "explanation": "GEMINI_API_KEY missing. Vision LLM scene inspection bypassed."
+            "explanation": "GEMINI_API_KEY missing. Vision LLM scene inspection bypassed.",
+            "status": "unavailable"
         }
 
     try:
@@ -47,7 +48,8 @@ def run_vision_llm_inspector(image_path):
                 "detector_name": "vision_llm_sanity_analysis",
                 "score": 0.5,
                 "confidence": "low",
-                "explanation": f"Gemini API returned no candidates: {json.dumps(res_data)[:300]}"
+                "explanation": f"Gemini API returned no candidates: {json.dumps(res_data)[:300]}",
+                "status": "failed"
             }
 
         raw_text = res_data['candidates'][0]['content']['parts'][0]['text'].strip()
@@ -58,7 +60,8 @@ def run_vision_llm_inspector(image_path):
             "detector_name": "vision_llm_sanity_analysis",
             "score": float(parsed.get("score", 0.5)),
             "confidence": "high",
-            "explanation": parsed.get("explanation", "Vision LLM scan complete.")
+            "explanation": parsed.get("explanation", "Vision LLM scan complete."),
+            "status": "passed" if float(parsed.get("score", 0.5)) < 0.4 else "flagged"
         }
 
     except Exception as e:
@@ -66,7 +69,8 @@ def run_vision_llm_inspector(image_path):
             "detector_name": "vision_llm_sanity_analysis",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Vision LLM inspection failed: {str(e)}"
+            "explanation": f"Vision LLM inspection failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

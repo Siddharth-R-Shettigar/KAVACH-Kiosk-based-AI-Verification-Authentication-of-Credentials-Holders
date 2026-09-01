@@ -30,14 +30,16 @@ def run_jpeg_ghost_detector(image_path):
             "score": round(score, 2),
             "confidence": "medium",
             "explanation": f"JPEG Ghost variance computed at {round(ghost_variance, 2)}. " +
-                           ("Suspicious uniform compression grid detected." if ghost_variance < 5.0 else "Normal multi-stage JPEG compression curve.")
+                           ("Suspicious uniform compression grid detected." if ghost_variance < 5.0 else "Normal multi-stage JPEG compression curve."),
+            "status": "flagged" if score >= 0.4 else "passed"
         }
     except Exception as e:
         return {
             "detector_name": "jpeg_ghost_analysis",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"JPEG Ghost check failed: {str(e)}"
+            "explanation": f"JPEG Ghost check failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

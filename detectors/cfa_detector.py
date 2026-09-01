@@ -45,7 +45,8 @@ def run_cfa_detector(image_path):
             "score": score,
             "confidence": "medium",
             "explanation": f"Bayer CFA grid residual ratio computed at {round(cfa_ratio, 2)}." +
-                           (" Periodic camera sensor demosaicing pattern detected." if score < 0.5 else " Lacks physical camera Bayer filter demosaicing signature.")
+                           (" Periodic camera sensor demosaicing pattern detected." if score < 0.5 else " Lacks physical camera Bayer filter demosaicing signature."),
+            "status": "flagged" if score >= 0.4 else "passed"                           
         }
 
     except Exception as e:
@@ -53,7 +54,8 @@ def run_cfa_detector(image_path):
             "detector_name": "cfa_demosaicing_analysis",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"CFA demosaicing evaluation failed: {str(e)}"
+            "explanation": f"CFA demosaicing evaluation failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

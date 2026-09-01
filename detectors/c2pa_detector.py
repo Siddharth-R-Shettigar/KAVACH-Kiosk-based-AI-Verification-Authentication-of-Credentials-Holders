@@ -12,7 +12,8 @@ def run_c2pa_detector(image_path):
                 "detector_name": "c2pa",
                 "score": 0.5,
                 "confidence": "low",
-                "explanation": "No C2PA Content Credentials manifest found (typical for standard or unsigned media)."
+                "explanation": "No C2PA Content Credentials manifest found (typical for standard or unsigned media).",
+                "status": "unavailable"
             }
         
         manifest_data = json.loads(reader.json())
@@ -24,14 +25,16 @@ def run_c2pa_detector(image_path):
                 "detector_name": "c2pa",
                 "score": 0.95,
                 "confidence": "high",
-                "explanation": "Valid C2PA Content Credentials found: File explicitly signed as AI/synthetic creation."
+                "explanation": "Valid C2PA Content Credentials found: File explicitly signed as AI/synthetic creation.",
+                "status": "flagged"
             }
         
         return {
             "detector_name": "c2pa",
             "score": 0.1,
             "confidence": "high",
-            "explanation": "Valid C2PA Content Credentials found certifying authentic media/capture."
+            "explanation": "Valid C2PA Content Credentials found certifying authentic media/capture.",
+            "status": "passed"
         }
 
     except Exception as e:
@@ -39,7 +42,8 @@ def run_c2pa_detector(image_path):
             "detector_name": "c2pa",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"C2PA evaluation bypassed: {str(e)}"
+            "explanation": f"C2PA evaluation bypassed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

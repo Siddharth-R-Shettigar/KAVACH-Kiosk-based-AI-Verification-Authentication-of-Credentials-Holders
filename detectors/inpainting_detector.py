@@ -36,7 +36,8 @@ def run_inpainting_detector(image_path):
             "score": score,
             "confidence": "medium",
             "explanation": f"Inpainting edge boundary dispersion ratio computed at {round(float(ratio), 2)}. " +
-                           ("Suspicious localized generative inpainting or region patching detected." if score > 0.5 else "Uniform pixel edge continuity verified across image patches.")
+                           ("Suspicious localized generative inpainting or region patching detected." if score > 0.5 else "Uniform pixel edge continuity verified across image patches."),
+            "status": "flagged" if score >= 0.4 else "passed"
         }
 
     except Exception as e:
@@ -44,7 +45,8 @@ def run_inpainting_detector(image_path):
             "detector_name": "inpainting_trace_analysis",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Inpainting analysis failed: {str(e)}"
+            "explanation": f"Inpainting analysis failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

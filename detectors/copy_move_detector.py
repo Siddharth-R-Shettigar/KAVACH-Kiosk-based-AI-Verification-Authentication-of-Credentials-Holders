@@ -18,7 +18,8 @@ def run_copy_move_detector(image_path):
                 "detector_name": "copy_move_forgery",
                 "score": 0.1,
                 "confidence": "low",
-                "explanation": "Insufficient feature keypoints found for clone analysis."
+                "explanation": "Insufficient feature keypoints found for clone analysis.",
+                "status": "unavailable"
             }
 
         # Match keypoints against themselves to find duplicate regions
@@ -44,7 +45,8 @@ def run_copy_move_detector(image_path):
             "score": score,
             "confidence": "medium",
             "explanation": f"Found {cloned_points} suspicious duplicated feature clusters." +
-                           (" Potential copy-move editing detected." if score > 0.4 else " No duplicate region cloning detected.")
+                           (" Potential copy-move editing detected." if score > 0.4 else " No duplicate region cloning detected."),
+            "status": "flagged" if score >= 0.4 else "passed"               
         }
 
     except Exception as e:
@@ -52,7 +54,8 @@ def run_copy_move_detector(image_path):
             "detector_name": "copy_move_forgery",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Copy-move evaluation failed: {str(e)}"
+            "explanation": f"Copy-move evaluation failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":

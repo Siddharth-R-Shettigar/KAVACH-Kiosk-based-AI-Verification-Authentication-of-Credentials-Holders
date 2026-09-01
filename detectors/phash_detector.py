@@ -20,14 +20,16 @@ def run_phash_detector(image_path):
                 "phash": phash_val,
                 "dhash": dhash_val,
                 "ahash": ahash_val
-            }
+            },
+            "status": "passed"
         }
     except Exception as e:
         return {
             "detector_name": "perceptual_hashing",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Perceptual hash computation failed: {str(e)}"
+            "explanation": f"Perceptual hash computation failed: {str(e)}",
+            "status": "failed"
         }
 
 if __name__ == "__main__":
