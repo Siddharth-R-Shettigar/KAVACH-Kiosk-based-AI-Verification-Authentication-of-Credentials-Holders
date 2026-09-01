@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import cv2
+import json
 import numpy as np
 from scipy.fftpack import fft2, fftshift
+
 
 
 # --------------------------------------------------------------------------- #
@@ -230,15 +232,16 @@ def _main():
     detector = LivenessDetector()
     result = detector.score(face)
 
+    adapter_output = run_liveness_detection(face, accept_threshold=args.accept_threshold)
+    print(json.dumps(adapter_output, indent=4))
+
+    # 2. Print detailed text metrics
     print(f"spoof_score : {result.spoof_score:.3f}")
     print(f"fft_score   : {result.fft_score:.3f}")
     print(f"color_score : {result.color_score:.3f}")
-    print(f"verdict     : {'live' if result.is_live(args.accept_threshold)else 'spoof'}")
+    print(f"verdict     : {result.verdict}")
     print(f"is_live     : {result.is_live(args.accept_threshold)}")
 
-
-if __name__ == "__main__":
-    _main()
 def run_liveness_detection(image_input) -> dict:
     """
     Standard entry-point function for kavach_engine.py integration.
@@ -285,3 +288,71 @@ def run_liveness_detection(image_input) -> dict:
         }    
 
 
+def run_liveness_detection(
+    face_bgr: np.ndarray,
+    config: LivenessConfig | None = None,
+    accept_threshold: float = 0.4,
+) -> dict:
+    """
+    Adapter entry point conforming to the KAVACH standard detector output
+    contract: {detector_name, score, confidence, explanation, status}.
+
+    Parameters
+    ----------
+    face_bgr : np.ndarray
+        Cropped face patch (BGR), as produced by the upstream face detector.
+    config : LivenessConfig, optional
+        Overrides for detector thresholds/weights.
+    accept_threshold : float
+        spoof_score below this value is treated as "pass".
+
+    Returns
+    -------
+    dict with keys:
+        detector_name : str   -- identifies this detector in a pipeline of checks
+        score         : float -- spoof_score, 0.0 (live) to 1.0 (spoofed)
+        confidence    : float -- how far the score sits from the decision
+                                  boundary, 0.0 (borderline) to 1.0 (decisive)
+        explanation   : str   -- human-readable summary of the sub-signals
+        status        : str   -- "pass", "fail", or "error"
+    """
+    try:
+        detector = LivenessDetector(config)
+        result = detector.score(face_bgr)
+
+        status = "pass" if result.is_live(accept_threshold) else "fail"
+
+        # Confidence: distance from the accept_threshold decision boundary,
+        # normalized so scores right at the boundary have low confidence
+        # and scores near 0.0 or 1.0 have high confidence.
+        boundary_distance = abs(result.spoof_score - accept_threshold)
+        max_distance = max(accept_threshold, 1.0 - accept_threshold)
+        confidence = float(np.clip(boundary_distance / (max_distance + 1e-6), 0.0, 1.0))
+
+        explanation = (
+            f"verdict={result.verdict}; "
+            f"fft_score={result.fft_score:.3f} "
+            f"(high-frequency/periodic texture consistent with print or screen moire), "
+            f"color_score={result.color_score:.3f} "
+            f"(HSV/YCbCr distribution consistent with display or print reproduction)"
+        )
+
+        return {
+            "detector_name": "liveness_detector",
+            "score": result.spoof_score,
+            "confidence": confidence,
+            "explanation": explanation,
+            "status": status,
+        }
+
+    except Exception as exc:
+        return {
+            "detector_name": "liveness_detector",
+            "score": None,
+            "confidence": 0.0,
+            "explanation": f"liveness detection failed: {exc}",
+            "status": "error",
+        }
+
+if __name__ == "__main__":
+    _main()
