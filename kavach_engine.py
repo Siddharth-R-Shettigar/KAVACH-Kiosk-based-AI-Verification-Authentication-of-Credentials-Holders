@@ -53,15 +53,11 @@ def analyze_media(image_path):
         (run_frequency_detector, 0.8, False),
         (run_copy_move_detector, 1.0, False),
         (run_blur_detector, 0.8, False),
-        (run_illuminant_detector, 1.0, False),
         (run_phash_detector, 0.0, False),         # hash generation only, not a fakeness signal
         (run_jpeg_ghost_detector, 1.2, True),
         (run_quantization_detector, 1.2, True),
-        (run_geometry_detector, 0.7, False),
-        (run_weather_detector, 0.0, False),       # informational only for now — see note in Fix 5
         (run_inpainting_detector, 1.0, False),
         (run_vision_llm_inspector, 1.5, False),   # requires GEMINI_API_KEY
-        (run_reverse_search, 0.5, False),         # requires TINEYE_API_KEY
     ]
 
     results = []
