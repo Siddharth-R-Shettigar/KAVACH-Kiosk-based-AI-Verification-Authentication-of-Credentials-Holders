@@ -103,5 +103,5 @@ def check_qr_consistency(image_path: str, ocr_fields: dict) -> dict:
 
 if __name__ == "__main__":
     import json as _json
-    result = check_qr_consistency("test_passport.jpg", {"surname": "MUKHERJEE", "dob": "800101"})
+    result = check_qr_consistency("/workspaces/VEDA-Verifiable-Evidence-Digital-Authenticity/test_images/fake/U.S._passport_card.jpg", {"surname": "MUKHERJEE", "dob": "800101"})
     print(_json.dumps(result, indent=2))

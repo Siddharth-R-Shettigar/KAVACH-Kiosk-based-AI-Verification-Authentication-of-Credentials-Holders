@@ -1,16 +1,28 @@
 # kavach/field_validator.py
 
 import re
-from datetime import datetime, date
+from datetime import date
 
-
-def parse_mrz_date(yymmdd: str) -> date | None:
-    """Convert YYMMDD to a proper date. Assumes 19xx for YY >= 24, else 20xx."""
+def parse_mrz_date(yymmdd: str, is_expiry: bool = False) -> date | None:
+    """
+    Convert YYMMDD to a date object.
+    - For DOB: assumes 2000s for years <= current_year % 100, else 1900s.
+    - For Expiry: assumes 2000s for years up to ~50 years ahead, else 1900s.
+    """
     try:
         yy = int(yymmdd[0:2])
         mm = int(yymmdd[2:4])
         dd = int(yymmdd[4:6])
-        year = 1900 + yy if yy >= 24 else 2000 + yy
+        current_yy = date.today().year % 100
+
+        if is_expiry:
+            # Passport expiry is typically within 10–20 years into the future.
+            # If yy <= current_yy + 50, it belongs to the 2000s.
+            year = 2000 + yy if yy <= (current_yy + 50) else 1900 + yy
+        else:
+            # DOB cannot be in the future.
+            year = 2000 + yy if yy <= current_yy else 1900 + yy
+
         return date(year, mm, dd)
     except Exception:
         return None
@@ -30,7 +42,7 @@ def validate_passport_number(number: str) -> dict:
 
 def validate_dob(dob_yymmdd: str) -> dict:
     """DOB must be a real past date."""
-    parsed = parse_mrz_date(dob_yymmdd)
+    parsed = parse_mrz_date(dob_yymmdd, is_expiry=False)
     if parsed is None:
         return {"field": "dob", "status": "flagged", "value": dob_yymmdd,
                 "explanation": f"DOB '{dob_yymmdd}' could not be parsed."}
@@ -51,7 +63,7 @@ def validate_dob(dob_yymmdd: str) -> dict:
 
 def validate_expiry(expiry_yymmdd: str) -> dict:
     """Expiry must be a real date (past is allowed but flagged as expired)."""
-    parsed = parse_mrz_date(expiry_yymmdd)
+    parsed = parse_mrz_date(expiry_yymmdd, is_expiry=False)
     if parsed is None:
         return {"field": "expiry", "status": "flagged", "value": expiry_yymmdd,
                 "explanation": f"Expiry '{expiry_yymmdd}' could not be parsed."}
