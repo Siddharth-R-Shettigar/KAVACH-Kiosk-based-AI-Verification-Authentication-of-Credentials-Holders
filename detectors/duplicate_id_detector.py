@@ -1,36 +1,29 @@
 """
-duplicate_id_detector.py
--------------------------
+detectors/duplicate_id_detector.py
+------------------------------------
 Prevents identity fraud where the same face is registered under
 different individual details (i.e. the same person trying to enroll
 under multiple ID records).
 
 How it works:
 1. Keeps a local JSON store of previously-seen face embeddings, each
-   tagged with the ID it was registered under (data/known_faces.json).
-2. When a new face embedding comes in (512-D vector), it is compared
-   against every stored embedding using cosine similarity.
-3. If the similarity to ANY embedding stored under a *different* ID
-   is above the threshold (default 0.85), the face is flagged as a
-   HIGH RISK duplicate identity attempt.
+   tagged with the person/ID it was registered under
+   (data/known_faces.json).
+2. When a new 512-D face embedding comes in, it is compared against
+   every stored embedding using cosine similarity.
+3. If similarity to an embedding stored under a DIFFERENT person_id is
+   above the threshold (default 0.85) -> flagged as HIGH RISK
+   duplicate identity attempt.
 
-Dependencies: numpy (required), json (stdlib).
-faiss-cpu is optional and only helps if your known_faces store grows
-very large (thousands+ of records) and linear search becomes slow.
-This script works fine with plain numpy for typical kiosk-scale data.
+Dependencies: numpy (required), json (stdlib), opencv-python + insightface
+(only needed for run_duplicate_id_detector's own face extraction step;
+not needed if you only ever call check_duplicate_identity directly with
+an embedding you already have).
 
-Usage as a library:
-    from duplicate_id_detector import check_duplicate_identity
-
-    result = check_duplicate_identity(
-        embedding=my_512d_vector,
-        id_tag="ID12345",
-        store_path="data/known_faces.json",
-    )
-    # result is a dict matching the standard detector output schema
-
-Usage as a script (for quick manual testing):
-    python duplicate_id_detector.py
+Pipeline integration:
+    run_duplicate_id_detector(image_path) is the entry point
+    kavach_engine.py's detector_pipeline calls, matching every other
+    detector's (image_path) -> dict signature.
 """
 
 import json
@@ -40,10 +33,9 @@ from datetime import datetime, timezone
 import numpy as np
 
 # ---------------------------------------------------------------------
-# Config - adjust these two paths if your repo uses different locations
+# Config
 # ---------------------------------------------------------------------
 KNOWN_FACES_PATH = os.path.join("data", "known_faces.json")
-LOG_PATH = os.path.join("data", "detection_logs.json")
 SIMILARITY_THRESHOLD = 0.85
 EMBEDDING_DIM = 512
 
@@ -56,8 +48,8 @@ def load_known_faces(store_path: str = KNOWN_FACES_PATH) -> list:
     Loads the known_faces.json store.
     Expected format:
     [
-      {"id_tag": "ID12345", "embedding": [0.01, 0.02, ...], "name": "optional"},
-      {"id_tag": "ID67890", "embedding": [0.03, 0.05, ...], "name": "optional"}
+      {"person_id": "ID12345", "embedding": [0.01, 0.02, ...], "registered_at": "..."},
+      {"person_id": "ID67890", "embedding": [0.03, 0.05, ...], "registered_at": "..."}
     ]
     Returns an empty list if the file doesn't exist yet (first run).
     """
@@ -78,26 +70,36 @@ def save_known_faces(records: list, store_path: str = KNOWN_FACES_PATH) -> None:
         json.dump(records, f, indent=2)
 
 
-def register_face(embedding, id_tag: str, store_path: str = KNOWN_FACES_PATH, name: str = None) -> None:
+def save_new_face_vector(person_id: str, embedding_512d, store_path: str = KNOWN_FACES_PATH) -> None:
     """
-    Adds a new face embedding to the known_faces store under the given ID tag.
-    Call this AFTER check_duplicate_identity has cleared the face as safe,
-    so genuinely new/unique people get added to the historical record.
+    Appends a new face embedding to data/known_faces.json under the
+    given person_id.
+
+    Call this after check_duplicate_identity() has cleared a face as
+    safe, so genuinely new/unique people get added to the historical
+    record for future comparisons. Do NOT call this for a flagged or
+    failed check - that would write a fraud attempt into the trusted
+    store.
+
+    Args:
+        person_id: the ID/tag this face should be registered under.
+        embedding_512d: a 512-D face embedding (list, tuple, or numpy array).
+        store_path: which known_faces.json file to append to.
+
+    Raises:
+        ValueError: if embedding_512d isn't a valid 512-D vector.
     """
+    vector = np.asarray(embedding_512d, dtype=float)
+    if vector.ndim != 1 or vector.shape[0] != EMBEDDING_DIM:
+        raise ValueError(f"embedding_512d must be a 512-D vector, got shape {vector.shape}")
+
     records = load_known_faces(store_path)
     records.append({
-        "id_tag": id_tag,
-        "embedding": _to_list(embedding),
-        "name": name,
+        "person_id": person_id,
+        "embedding": vector.tolist(),
         "registered_at": datetime.now(timezone.utc).isoformat(),
     })
     save_known_faces(records, store_path)
-
-
-def _to_list(embedding) -> list:
-    if isinstance(embedding, np.ndarray):
-        return embedding.astype(float).tolist()
-    return list(embedding)
 
 
 # ---------------------------------------------------------------------
@@ -107,7 +109,7 @@ def cosine_similarity(vec_a, vec_b) -> float:
     """Standard cosine similarity between two vectors, returned as a float in [-1, 1]."""
     a = np.asarray(vec_a, dtype=float)
     b = np.asarray(vec_b, dtype=float)
-    denom = (np.linalg.norm(a) * np.linalg.norm(b))
+    denom = np.linalg.norm(a) * np.linalg.norm(b)
     if denom == 0:
         return 0.0
     return float(np.dot(a, b) / denom)
@@ -115,25 +117,19 @@ def cosine_similarity(vec_a, vec_b) -> float:
 
 def check_duplicate_identity(
     embedding,
-    id_tag: str,
+    person_id: str,
     store_path: str = KNOWN_FACES_PATH,
     threshold: float = SIMILARITY_THRESHOLD,
 ) -> dict:
     """
     Compares `embedding` against every record in the known_faces store.
 
-    Only matches against records whose id_tag is DIFFERENT from the
-    incoming id_tag count as a duplicate-identity risk - a returning
-    person re-verifying under their OWN id_tag is expected and safe.
+    Only matches against records whose person_id is DIFFERENT from the
+    incoming person_id count as a duplicate-identity risk - a returning
+    person re-verifying under their OWN person_id is expected and safe.
 
-    Returns a dict following the standard detector output schema:
-    {
-        "detector_name": "duplicate_identity_check",
-        "score": float,        # 0.0 (safe) - 1.0 (flagged), based on top match similarity
-        "confidence": str,     # "high" | "medium" | "low"
-        "explanation": str,
-        "status": str          # "passed" | "flagged" | "failed"
-    }
+    Returns a dict in the standard detector output format:
+        detector_name, score, confidence, explanation, status
     """
     try:
         embedding = np.asarray(embedding, dtype=float)
@@ -148,20 +144,20 @@ def check_duplicate_identity(
 
         known_faces = load_known_faces(store_path)
 
-        best_match = None       # highest similarity seen against a DIFFERENT id_tag
+        best_match = None       # highest similarity seen against a DIFFERENT person_id
         best_similarity = -1.0
 
         for record in known_faces:
-            record_id_tag = record.get("id_tag")
+            record_person_id = record.get("person_id")
             record_embedding = record.get("embedding")
-            if record_id_tag is None or record_embedding is None:
+            if record_person_id is None or record_embedding is None:
                 continue  # skip malformed records rather than crashing the kiosk
 
             similarity = cosine_similarity(embedding, record_embedding)
 
-            if record_id_tag != id_tag and similarity > best_similarity:
+            if record_person_id != person_id and similarity > best_similarity:
                 best_similarity = similarity
-                best_match = record_id_tag
+                best_match = record_person_id
 
         # No comparable records at all -> nothing to flag against
         if best_match is None:
@@ -212,6 +208,14 @@ def check_duplicate_identity(
 
 
 def _build_result(score: float, confidence: str, explanation: str, status: str) -> dict:
+    """
+    Builds the standard detector output dict:
+        detector_name  -> short name of this check
+        score          -> 0.0 (clean/low risk) to 1.0 (suspicious/high risk)
+        confidence      -> "low" | "medium" | "high"
+        explanation     -> short human sentence
+        status          -> "passed" | "flagged" | "failed" | "unavailable"
+    """
     return {
         "detector_name": "duplicate_identity_check",
         "score": score,
@@ -221,341 +225,129 @@ def _build_result(score: float, confidence: str, explanation: str, status: str) 
     }
 
 
-# ---------------------------------------------------------------------
-# Logging - appends every detection result to a running JSON log file
-# ---------------------------------------------------------------------
-def log_result(result: dict, id_tag: str, log_path: str = LOG_PATH) -> None:
+def _person_id_for(image_path: str) -> str:
     """
-    Appends a timestamped detection result to data/detection_logs.json.
-    Creates the file/folder if they don't exist yet.
+    Placeholder person_id source.
+
+    kavach_engine.analyze_media(image_path) doesn't currently pass a
+    real enrollment ID into the pipeline, so this uses the image's
+    filename (without extension) as a stand-in person_id. Swap this
+    out for a real ID as soon as one is available in analyze_media's
+    call signature - filenames are NOT a real identity field.
     """
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-
-    if os.path.exists(log_path):
-        with open(log_path, "r") as f:
-            try:
-                logs = json.load(f)
-            except json.JSONDecodeError:
-                logs = []
-    else:
-        logs = []
-
-    logs.append({
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "id_tag": id_tag,
-        **result,
-    })
-
-    with open(log_path, "w") as f:
-        json.dump(logs, f, indent=2)
+    return os.path.splitext(os.path.basename(image_path))[0]
 
 
 # ---------------------------------------------------------------------
-# Manual test / demo when run directly: python duplicate_id_detector.py
+# Pipeline entry point - this is what kavach_engine.py calls
 # ---------------------------------------------------------------------
-if __name__ == "__main__":
-    demo_store = os.path.join("data", "known_faces_demo.json")
-    demo_log = os.path.join("data", "detection_logs_demo.json")
-
-    # Seed the demo store with one existing face under "ID001"
-    rng = np.random.default_rng(42)
-    original_embedding = rng.normal(size=EMBEDDING_DIM)
-    save_known_faces(
-        [{"id_tag": "ID001", "embedding": _to_list(original_embedding), "name": "Demo Person"}],
-        demo_store,
-    )
-
-    print("Test 1: Same face, different ID -> should FLAG")
-    duplicate_attempt = original_embedding + rng.normal(scale=0.01, size=EMBEDDING_DIM)
-    result_1 = check_duplicate_identity(duplicate_attempt, id_tag="ID002", store_path=demo_store)
-    print(json.dumps(result_1, indent=2))
-    log_result(result_1, id_tag="ID002", log_path=demo_log)
-
-    print("\nTest 2: Different face, new ID -> should PASS")
-    new_face = rng.normal(size=EMBEDDING_DIM)
-    result_2 = check_duplicate_identity(new_face, id_tag="ID003", store_path=demo_store)
-    print(json.dumps(result_2, indent=2))
-    log_result(result_2, id_tag="ID003", log_path=demo_log)
-
-    print(f"\nDemo logs written to: {demo_log}")
-
-"""
-duplicate_id_detector.py
--------------------------
-Prevents identity fraud where the same face is registered under
-different individual details (i.e. the same person trying to enroll
-under multiple ID records).
-
-How it works:
-1. Keeps a local JSON store of previously-seen face embeddings, each
-   tagged with the ID it was registered under (data/known_faces.json).
-2. When a new face embedding comes in (512-D vector), it is compared
-   against every stored embedding using cosine similarity.
-3. If the similarity to ANY embedding stored under a *different* ID
-   is above the threshold (default 0.85), the face is flagged as a
-   HIGH RISK duplicate identity attempt.
-
-Dependencies: numpy (required), json (stdlib).
-faiss-cpu is optional and only helps if your known_faces store grows
-very large (thousands+ of records) and linear search becomes slow.
-This script works fine with plain numpy for typical kiosk-scale data.
-
-Usage as a library:
-    from duplicate_id_detector import check_duplicate_identity
-
-    result = check_duplicate_identity(
-        embedding=my_512d_vector,
-        id_tag="ID12345",
-        store_path="data/known_faces.json",
-    )
-    # result is a dict matching the standard detector output schema
-
-Usage as a script (for quick manual testing):
-    python duplicate_id_detector.py
-"""
-
-import json
-import os
-from datetime import datetime, timezone
-
-import numpy as np
-
-# ---------------------------------------------------------------------
-# Config - adjust these two paths if your repo uses different locations
-# ---------------------------------------------------------------------
-KNOWN_FACES_PATH = os.path.join("data", "known_faces.json")
-LOG_PATH = os.path.join("data", "detection_logs.json")
-SIMILARITY_THRESHOLD = 0.85
-EMBEDDING_DIM = 512
-
-
-# ---------------------------------------------------------------------
-# Storage helpers
-# ---------------------------------------------------------------------
-def load_known_faces(store_path: str = KNOWN_FACES_PATH) -> list:
+def run_duplicate_id_detector(image_path: str) -> dict:
     """
-    Loads the known_faces.json store.
-    Expected format:
-    [
-      {"id_tag": "ID12345", "embedding": [0.01, 0.02, ...], "name": "optional"},
-      {"id_tag": "ID67890", "embedding": [0.03, 0.05, ...], "name": "optional"}
-    ]
-    Returns an empty list if the file doesn't exist yet (first run).
-    """
-    if not os.path.exists(store_path):
-        return []
-    with open(store_path, "r") as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            # Corrupt or empty file - treat as no records rather than crashing
-            return []
-
-
-def save_known_faces(records: list, store_path: str = KNOWN_FACES_PATH) -> None:
-    """Overwrites the known_faces.json store with the given list of records."""
-    os.makedirs(os.path.dirname(store_path), exist_ok=True)
-    with open(store_path, "w") as f:
-        json.dump(records, f, indent=2)
-
-
-def register_face(embedding, id_tag: str, store_path: str = KNOWN_FACES_PATH, name: str = None) -> None:
-    """
-    Adds a new face embedding to the known_faces store under the given ID tag.
-    Call this AFTER check_duplicate_identity has cleared the face as safe,
-    so genuinely new/unique people get added to the historical record.
-    """
-    records = load_known_faces(store_path)
-    records.append({
-        "id_tag": id_tag,
-        "embedding": _to_list(embedding),
-        "name": name,
-        "registered_at": datetime.now(timezone.utc).isoformat(),
-    })
-    save_known_faces(records, store_path)
-
-
-def _to_list(embedding) -> list:
-    if isinstance(embedding, np.ndarray):
-        return embedding.astype(float).tolist()
-    return list(embedding)
-
-
-# ---------------------------------------------------------------------
-# Core similarity logic
-# ---------------------------------------------------------------------
-def cosine_similarity(vec_a, vec_b) -> float:
-    """Standard cosine similarity between two vectors, returned as a float in [-1, 1]."""
-    a = np.asarray(vec_a, dtype=float)
-    b = np.asarray(vec_b, dtype=float)
-    denom = (np.linalg.norm(a) * np.linalg.norm(b))
-    if denom == 0:
-        return 0.0
-    return float(np.dot(a, b) / denom)
-
-
-def check_duplicate_identity(
-    embedding,
-    id_tag: str,
-    store_path: str = KNOWN_FACES_PATH,
-    threshold: float = SIMILARITY_THRESHOLD,
-) -> dict:
-    """
-    Compares `embedding` against every record in the known_faces store.
-
-    Only matches against records whose id_tag is DIFFERENT from the
-    incoming id_tag count as a duplicate-identity risk - a returning
-    person re-verifying under their OWN id_tag is expected and safe.
-
-    Returns a dict following the standard detector output schema:
-    {
-        "detector_name": "duplicate_identity_check",
-        "score": float,        # 0.0 (safe) - 1.0 (flagged), based on top match similarity
-        "confidence": str,     # "high" | "medium" | "low"
-        "explanation": str,
-        "status": str          # "passed" | "flagged" | "failed"
-    }
+    Standard detector interface: takes an image path, returns the
+    standard detector_signals dict (detector_name, score, confidence,
+    explanation, status). Matches every other detector in detectors/
+    so it can be dropped straight into kavach_engine.py's
+    detector_pipeline list.
     """
     try:
-        embedding = np.asarray(embedding, dtype=float)
+        import cv2
+    except ImportError:
+        return _build_result(
+            score=0.0,
+            confidence="low",
+            explanation="opencv-python is not installed; duplicate identity check unavailable.",
+            status="unavailable",
+        )
 
-        if embedding.ndim != 1 or embedding.shape[0] != EMBEDDING_DIM:
+    try:
+        from insightface.app import FaceAnalysis  # noqa: F401 (import-check only)
+    except ImportError:
+        return _build_result(
+            score=0.0,
+            confidence="low",
+            explanation="insightface is not installed; duplicate identity check unavailable.",
+            status="unavailable",
+        )
+
+    try:
+        img = cv2.imread(image_path)
+        if img is None:
             return _build_result(
                 score=0.0,
                 confidence="low",
-                explanation=f"Invalid embedding shape {embedding.shape}, expected ({EMBEDDING_DIM},).",
+                explanation="Could not read image file.",
                 status="failed",
             )
 
-        known_faces = load_known_faces(store_path)
+        app = _get_face_app()
+        faces = app.get(img)
 
-        best_match = None       # highest similarity seen against a DIFFERENT id_tag
-        best_similarity = -1.0
-
-        for record in known_faces:
-            record_id_tag = record.get("id_tag")
-            record_embedding = record.get("embedding")
-            if record_id_tag is None or record_embedding is None:
-                continue  # skip malformed records rather than crashing the kiosk
-
-            similarity = cosine_similarity(embedding, record_embedding)
-
-            if record_id_tag != id_tag and similarity > best_similarity:
-                best_similarity = similarity
-                best_match = record_id_tag
-
-        # No comparable records at all -> nothing to flag against
-        if best_match is None:
+        if not faces:
             return _build_result(
                 score=0.0,
-                confidence="high",
-                explanation="No prior records found under a different ID. No duplicate risk detected.",
-                status="passed",
+                confidence="low",
+                explanation="No face detected in image; duplicate identity check unavailable.",
+                status="unavailable",
             )
 
-        score = max(0.0, min(1.0, best_similarity))  # clamp into [0, 1] for the output schema
+        largest_face = max(faces, key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]))
+        embedding = largest_face.normed_embedding
+        person_id = _person_id_for(image_path)
 
-        if best_similarity > threshold:
-            margin = best_similarity - threshold
-            confidence = "high" if margin > 0.05 else "medium"
-            return _build_result(
-                score=round(score, 4),
-                confidence=confidence,
-                explanation=(
-                    f"HIGH RISK: Face matches an existing record under a different ID "
-                    f"('{best_match}') with similarity {best_similarity:.4f}, "
-                    f"above the {threshold} duplicate-identity threshold."
-                ),
-                status="flagged",
-            )
+        result = check_duplicate_identity(embedding, person_id=person_id)
 
-        # Below threshold - safe, but report how close it was for transparency
-        margin = threshold - best_similarity
-        confidence = "high" if margin > 0.05 else "medium"
-        return _build_result(
-            score=round(score, 4),
-            confidence=confidence,
-            explanation=(
-                f"No duplicate identity detected. Closest match under a different ID "
-                f"('{best_match}') had similarity {best_similarity:.4f}, "
-                f"below the {threshold} threshold."
-            ),
-            status="passed",
-        )
+        # Only add clean checks to the trusted known-faces store.
+        # Flagged/failed/unavailable results are NOT auto-registered.
+        if result["status"] == "passed":
+            save_new_face_vector(person_id, embedding)
+
+        return result
 
     except Exception as e:
         return _build_result(
             score=0.0,
             confidence="low",
-            explanation=f"Duplicate identity check failed to run: {e}",
+            explanation=f"Duplicate identity check crashed during execution: {e}",
             status="failed",
         )
 
 
-def _build_result(score: float, confidence: str, explanation: str, status: str) -> dict:
-    return {
-        "detector_name": "duplicate_identity_check",
-        "score": score,
-        "confidence": confidence,
-        "explanation": explanation,
-        "status": status,
-    }
+_FACE_APP = None
+
+
+def _get_face_app():
+    """Lazily loads and caches the InsightFace model (loaded once per process)."""
+    global _FACE_APP
+    if _FACE_APP is None:
+        from insightface.app import FaceAnalysis
+        _FACE_APP = FaceAnalysis(name="buffalo_l")
+        _FACE_APP.prepare(ctx_id=-1, det_size=(640, 640))
+    return _FACE_APP
 
 
 # ---------------------------------------------------------------------
-# Logging - appends every detection result to a running JSON log file
-# ---------------------------------------------------------------------
-def log_result(result: dict, id_tag: str, log_path: str = LOG_PATH) -> None:
-    """
-    Appends a timestamped detection result to data/detection_logs.json.
-    Creates the file/folder if they don't exist yet.
-    """
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-
-    if os.path.exists(log_path):
-        with open(log_path, "r") as f:
-            try:
-                logs = json.load(f)
-            except json.JSONDecodeError:
-                logs = []
-    else:
-        logs = []
-
-    logs.append({
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "id_tag": id_tag,
-        **result,
-    })
-
-    with open(log_path, "w") as f:
-        json.dump(logs, f, indent=2)
-
-
-# ---------------------------------------------------------------------
-# Manual test / demo when run directly: python duplicate_id_detector.py
+# Manual test / demo when run directly: python detectors/duplicate_id_detector.py
 # ---------------------------------------------------------------------
 if __name__ == "__main__":
     demo_store = os.path.join("data", "known_faces_demo.json")
-    demo_log = os.path.join("data", "detection_logs_demo.json")
 
-    # Seed the demo store with one existing face under "ID001"
     rng = np.random.default_rng(42)
     original_embedding = rng.normal(size=EMBEDDING_DIM)
     save_known_faces(
-        [{"id_tag": "ID001", "embedding": _to_list(original_embedding), "name": "Demo Person"}],
+        [{"person_id": "ID001", "embedding": original_embedding.tolist()}],
         demo_store,
     )
 
     print("Test 1: Same face, different ID -> should FLAG")
     duplicate_attempt = original_embedding + rng.normal(scale=0.01, size=EMBEDDING_DIM)
-    result_1 = check_duplicate_identity(duplicate_attempt, id_tag="ID002", store_path=demo_store)
+    result_1 = check_duplicate_identity(duplicate_attempt, person_id="ID002", store_path=demo_store)
     print(json.dumps(result_1, indent=2))
-    log_result(result_1, id_tag="ID002", log_path=demo_log)
 
     print("\nTest 2: Different face, new ID -> should PASS")
     new_face = rng.normal(size=EMBEDDING_DIM)
-    result_2 = check_duplicate_identity(new_face, id_tag="ID003", store_path=demo_store)
+    result_2 = check_duplicate_identity(new_face, person_id="ID003", store_path=demo_store)
     print(json.dumps(result_2, indent=2))
-    log_result(result_2, id_tag="ID003", log_path=demo_log)
 
-    print(f"\nDemo logs written to: {demo_log}")
+    print("\nTest 3: save_new_face_vector helper")
+    save_new_face_vector("ID003", new_face, store_path=demo_store)
+    print(f"known_faces now has {len(load_known_faces(demo_store))} records in {demo_store}")
