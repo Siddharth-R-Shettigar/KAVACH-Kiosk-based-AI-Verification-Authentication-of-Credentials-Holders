@@ -45,7 +45,8 @@ def run_face_verification(document_image_path, live_image_path):
             "detector_name": "face_verification",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Document image: {doc_err}"
+            "explanation": f"Document image: {doc_err}",
+            "status": "unavailable"
         }
 
     live_embedding, live_err = _get_largest_face_embedding(live_image_path)
@@ -54,7 +55,8 @@ def run_face_verification(document_image_path, live_image_path):
             "detector_name": "face_verification",
             "score": 0.5,
             "confidence": "low",
-            "explanation": f"Live image: {live_err}"
+            "explanation": f"Live image: {live_err}",
+            "status": "unavailable"
         }
 
     # Embeddings are already L2-normalized, so dot product = cosine similarity directly
@@ -72,7 +74,8 @@ def run_face_verification(document_image_path, live_image_path):
         "score": round(score, 2),
         "confidence": "high",
         "explanation": f"Cosine distance: {round(cosine_distance, 4)} (match threshold: 0.4). " +
-                       ("Faces match \u2014 likely the same person." if is_match else "Faces do not match \u2014 possible impersonation.")
+                       ("Faces match \u2014 likely the same person." if is_match else "Faces do not match \u2014 possible impersonation."),
+        "status": "passed" if is_match else "flagged"
     }
 
 

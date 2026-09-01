@@ -11,7 +11,8 @@ def run_quantization_detector(image_path):
                 "detector_name": "jpeg_quantization_analysis",
                 "score": 0.1,
                 "confidence": "low",
-                "explanation": "Non-JPEG file format. Quantization table inspection bypassed."
+                "explanation": "Non-JPEG file format. Quantization table inspection bypassed.",
+                "status": "unavailable"
             }
 
         qtables = getattr(img, 'quant_tables', None)

@@ -59,7 +59,7 @@ def run_hf_ai_detector(image_path):
             "score": round(avg_synthetic_score, 2),
             "confidence": "high",
             "explanation": f"Ensemble of {len(scores)} Hugging Face Vision Transformers evaluated synthetic probability at {int(avg_synthetic_score * 100)}%.",
-            "status": "flagged" if score >= 0.4 else "passed"
+            "status": "flagged" if avg_synthetic_score >= 0.4 else "passed"
         }
 
     except Exception as e:
