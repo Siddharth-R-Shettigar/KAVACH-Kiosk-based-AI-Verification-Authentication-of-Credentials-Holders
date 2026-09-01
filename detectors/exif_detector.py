@@ -12,10 +12,14 @@ def run_exif_detector(image_path):
         
         return {
             "detector_name": "exiftool",
-            "score": 0.1 if has_camera_data else 0.85, # Higher score = more suspicious / likely synthetic
-            "confidence": "high",
-            "explanation": "Original camera EXIF data detected." if has_camera_data else "No camera EXIF metadata found; image may be AI-generated or stripped.",
-            "status": "passed" if has_camera_data else "flagged"
+            "score": 0.15 if has_camera_data else 0.35,
+            "confidence": "medium" if has_camera_data else "low",
+            "explanation": (
+                "Original camera EXIF data detected."
+                if has_camera_data
+                else "No camera EXIF metadata found. Common on scans and shared files; weak signal only."
+            ),
+            "status": "passed" if has_camera_data else "passed"
         }
     except Exception as e:
         return {

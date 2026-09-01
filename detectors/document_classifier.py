@@ -1,4 +1,5 @@
-# kavach/document_classifier.py
+
+ # kavach/document_classifier.py
 
 import re
 import cv2
@@ -33,17 +34,23 @@ def classify_document(image_path: str, ocr_text: str = "") -> Dict[str, Any]:
         img = cv2.imread(image_path)
         if img is None:
             return {
+                "detector_name": "document_classifier",
                 "doc_type": "unknown",
-                "confidence": 0.0,
-                "explanation": "Could not read image file or path is invalid."
+                "score": 0.5,
+                "confidence": "low",
+                "explanation": "Could not read image file or path is invalid.",
+                "status": "failed"
             }
 
         h, w = img.shape[:2]
         if h == 0 or w == 0:
             return {
+                "detector_name": "document_classifier",
                 "doc_type": "unknown",
-                "confidence": 0.0,
-                "explanation": "Invalid image dimensions."
+                "score": 0.5,
+                "confidence": "low",
+                "explanation": "Invalid image dimensions.",
+                "status": "failed"
             }
 
         # Orientation-agnostic aspect ratio
@@ -76,17 +83,21 @@ def classify_document(image_path: str, ocr_text: str = "") -> Dict[str, Any]:
             best_type = "unknown"
 
         return {
+            "detector_name": "document_classifier",
             "doc_type": best_type,
-            "confidence": best_score,
+            "score": float(best_score),
+            "confidence": "high" if best_score >= 0.5 else "medium" if best_score >= 0.3 else "low",
             "all_scores": scores,
-            "explanation": f"Classified as {best_type} (aspect ratio: {norm_ratio:.2f}, confidence: {best_score})."
+            "explanation": f"Classified as {best_type} (score {best_score}).",
+            "status": "passed" if best_type != "unknown" else "unavailable"
         }
 
     except Exception as e:
         return {
             "doc_type": "unknown",
             "confidence": 0.0,
-            "explanation": f"Error during classification: {str(e)}"
+            "explanation": f"Error during classification: {str(e)}",
+            "status": "failed"
         }
 
 

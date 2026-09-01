@@ -1,0 +1,763 @@
+{
+  "engine": "KAVACH",
+  "file_analyzed": "pass.jpg",
+  "live_image": null,
+  "risk_level": "REVIEW",
+  "risk_reason": "Flagged signals: field_validator, cfa_demosaicing_analysis, resampling_interpolation_analysis, frequency_domain_fft, jpeg_ghost_analysis.",
+  "forensic_risk_score": 0.349,
+  "active_detectors_evaluated": 24,
+  "detector_signals": [
+    {
+      "detector_name": "ocr_extraction",
+      "score": 0.0,
+      "confidence": "high",
+      "explanation": "Extracted 52 tokens across 23 lines. Found 1 MRZ candidates.",
+      "status": "passed",
+      "fields": [
+        {
+          "text": "PASSPORT",
+          "confidence": 0.964,
+          "bounding_box": {
+            "x1": 90,
+            "y1": 17,
+            "x2": 278,
+            "y2": 92
+          }
+        },
+        {
+          "text": "UNTTED STTES OF AERICI",
+          "confidence": 0.567,
+          "bounding_box": {
+            "x1": 402,
+            "y1": 14,
+            "x2": 1355,
+            "y2": 86
+          }
+        },
+        {
+          "text": "PASAPORTE",
+          "confidence": 0.999,
+          "bounding_box": {
+            "x1": 93,
+            "y1": 85,
+            "x2": 277,
+            "y2": 121
+          }
+        },
+        {
+          "text": "Type / Type /",
+          "confidence": 0.995,
+          "bounding_box": {
+            "x1": 473,
+            "y1": 81,
+            "x2": 605,
+            "y2": 117
+          }
+        },
+        {
+          "text": "Code / Code",
+          "confidence": 0.709,
+          "bounding_box": {
+            "x1": 684,
+            "y1": 84,
+            "x2": 806,
+            "y2": 112
+          }
+        },
+        {
+          "text": "Codigo",
+          "confidence": 0.992,
+          "bounding_box": {
+            "x1": 816,
+            "y1": 86,
+            "x2": 892,
+            "y2": 116
+          }
+        },
+        {
+          "text": "Passport No",
+          "confidence": 0.976,
+          "bounding_box": {
+            "x1": 915,
+            "y1": 85,
+            "x2": 1042,
+            "y2": 117
+          }
+        },
+        {
+          "text": "No: du Passeport",
+          "confidence": 0.5,
+          "bounding_box": {
+            "x1": 1056,
+            "y1": 87,
+            "x2": 1226,
+            "y2": 118
+          }
+        },
+        {
+          "text": "No_de Pasaporte",
+          "confidence": 0.946,
+          "bounding_box": {
+            "x1": 1236,
+            "y1": 87,
+            "x2": 1406,
+            "y2": 120
+          }
+        },
+        {
+          "text": "P",
+          "confidence": 0.991,
+          "bounding_box": {
+            "x1": 550,
+            "y1": 118,
+            "x2": 576,
+            "y2": 148
+          }
+        },
+        {
+          "text": "USA",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 765,
+            "y1": 115,
+            "x2": 843,
+            "y2": 155
+          }
+        },
+        {
+          "text": "910239248",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 1069,
+            "y1": 133,
+            "x2": 1257,
+            "y2": 171
+          }
+        },
+        {
+          "text": "USA",
+          "confidence": 0.33,
+          "bounding_box": {
+            "x1": 135,
+            "y1": 137,
+            "x2": 343,
+            "y2": 201
+          }
+        },
+        {
+          "text": "Surname",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 472,
+            "y1": 158,
+            "x2": 566,
+            "y2": 186
+          }
+        },
+        {
+          "text": "Nom",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 590,
+            "y1": 160,
+            "x2": 642,
+            "y2": 186
+          }
+        },
+        {
+          "text": "Apellidos",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 666,
+            "y1": 160,
+            "x2": 760,
+            "y2": 190
+          }
+        },
+        {
+          "text": "DE LA PAZ",
+          "confidence": 0.982,
+          "bounding_box": {
+            "x1": 471,
+            "y1": 187,
+            "x2": 651,
+            "y2": 229
+          }
+        },
+        {
+          "text": "Given Names / Prenoms / Nombres",
+          "confidence": 0.771,
+          "bounding_box": {
+            "x1": 467,
+            "y1": 228,
+            "x2": 817,
+            "y2": 264
+          }
+        },
+        {
+          "text": "MICHELLE",
+          "confidence": 0.931,
+          "bounding_box": {
+            "x1": 473,
+            "y1": 271,
+            "x2": 619,
+            "y2": 307
+          }
+        },
+        {
+          "text": "Maticnality",
+          "confidence": 0.746,
+          "bounding_box": {
+            "x1": 474,
+            "y1": 304,
+            "x2": 566,
+            "y2": 330
+          }
+        },
+        {
+          "text": "[utioralileite / Nacionalidad",
+          "confidence": 0.316,
+          "bounding_box": {
+            "x1": 580,
+            "y1": 304,
+            "x2": 840,
+            "y2": 334
+          }
+        },
+        {
+          "text": "UNITED STATES OF AMERICA",
+          "confidence": 0.734,
+          "bounding_box": {
+            "x1": 467,
+            "y1": 333,
+            "x2": 965,
+            "y2": 377
+          }
+        },
+        {
+          "text": "Date of birth / Date de naissance",
+          "confidence": 0.916,
+          "bounding_box": {
+            "x1": 468,
+            "y1": 378,
+            "x2": 784,
+            "y2": 410
+          }
+        },
+        {
+          "text": "Fecha de nacimiento",
+          "confidence": 0.89,
+          "bounding_box": {
+            "x1": 794,
+            "y1": 382,
+            "x2": 998,
+            "y2": 410
+          }
+        },
+        {
+          "text": "07",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 465,
+            "y1": 409,
+            "x2": 511,
+            "y2": 447
+          }
+        },
+        {
+          "text": "1999",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 583,
+            "y1": 413,
+            "x2": 677,
+            "y2": 453
+          }
+        },
+        {
+          "text": "Place of birth / Lieu de naissance / Lugar de nacimiento",
+          "confidence": 0.738,
+          "bounding_box": {
+            "x1": 465,
+            "y1": 451,
+            "x2": 1015,
+            "y2": 488
+          }
+        },
+        {
+          "text": "1 Sexe / Sexo",
+          "confidence": 0.502,
+          "bounding_box": {
+            "x1": 1146,
+            "y1": 455,
+            "x2": 1276,
+            "y2": 484
+          }
+        },
+        {
+          "text": "CALIFORNIA, USA",
+          "confidence": 0.682,
+          "bounding_box": {
+            "x1": 465,
+            "y1": 483,
+            "x2": 777,
+            "y2": 525
+          }
+        },
+        {
+          "text": "Date of issue",
+          "confidence": 0.995,
+          "bounding_box": {
+            "x1": 466,
+            "y1": 528,
+            "x2": 596,
+            "y2": 558
+          }
+        },
+        {
+          "text": "Date de delivrance",
+          "confidence": 0.994,
+          "bounding_box": {
+            "x1": 620,
+            "y1": 528,
+            "x2": 802,
+            "y2": 558
+          }
+        },
+        {
+          "text": "Fecha de expedicion",
+          "confidence": 0.771,
+          "bounding_box": {
+            "x1": 822,
+            "y1": 530,
+            "x2": 1024,
+            "y2": 561
+          }
+        },
+        {
+          "text": "Authority",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 1078,
+            "y1": 532,
+            "x2": 1172,
+            "y2": 560
+          }
+        },
+        {
+          "text": "Autorite",
+          "confidence": 0.997,
+          "bounding_box": {
+            "x1": 1182,
+            "y1": 532,
+            "x2": 1264,
+            "y2": 558
+          }
+        },
+        {
+          "text": "Autoridad",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 1273,
+            "y1": 531,
+            "x2": 1374,
+            "y2": 560
+          }
+        },
+        {
+          "text": "06 Feb 2008",
+          "confidence": 0.87,
+          "bounding_box": {
+            "x1": 461,
+            "y1": 557,
+            "x2": 655,
+            "y2": 597
+          }
+        },
+        {
+          "text": "United States",
+          "confidence": 0.921,
+          "bounding_box": {
+            "x1": 1100,
+            "y1": 566,
+            "x2": 1316,
+            "y2": 604
+          }
+        },
+        {
+          "text": "Date of expiration",
+          "confidence": 0.947,
+          "bounding_box": {
+            "x1": 461,
+            "y1": 596,
+            "x2": 641,
+            "y2": 634
+          }
+        },
+        {
+          "text": "Date d'expiration",
+          "confidence": 0.962,
+          "bounding_box": {
+            "x1": 650,
+            "y1": 600,
+            "x2": 818,
+            "y2": 632
+          }
+        },
+        {
+          "text": "Fecha de caducidad",
+          "confidence": 0.802,
+          "bounding_box": {
+            "x1": 830,
+            "y1": 602,
+            "x2": 1022,
+            "y2": 632
+          }
+        },
+        {
+          "text": "05 Feb 2018",
+          "confidence": 0.842,
+          "bounding_box": {
+            "x1": 461,
+            "y1": 629,
+            "x2": 655,
+            "y2": 671
+          }
+        },
+        {
+          "text": "Department of State",
+          "confidence": 0.756,
+          "bounding_box": {
+            "x1": 1046,
+            "y1": 614,
+            "x2": 1369,
+            "y2": 658
+          }
+        },
+        {
+          "text": "Endorsements",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 462,
+            "y1": 674,
+            "x2": 606,
+            "y2": 702
+          }
+        },
+        {
+          "text": "Mentions Speciales",
+          "confidence": 0.897,
+          "bounding_box": {
+            "x1": 618,
+            "y1": 676,
+            "x2": 810,
+            "y2": 706
+          }
+        },
+        {
+          "text": "Anotaciones",
+          "confidence": 0.999,
+          "bounding_box": {
+            "x1": 821,
+            "y1": 675,
+            "x2": 944,
+            "y2": 707
+          }
+        },
+        {
+          "text": "SEE PAGE 27",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 487,
+            "y1": 703,
+            "x2": 703,
+            "y2": 745
+          }
+        },
+        {
+          "text": "USA",
+          "confidence": 0.999,
+          "bounding_box": {
+            "x1": 1084,
+            "y1": 684,
+            "x2": 1302,
+            "y2": 786
+          }
+        },
+        {
+          "text": "P< D E LA PAZ <<MICHELLE<<<<<<<<<<<<<<<<K<K<<<<<",
+          "confidence": 0.153,
+          "bounding_box": {
+            "x1": 46,
+            "y1": 811,
+            "x2": 1264,
+            "y2": 860
+          }
+        },
+        {
+          "text": "9102392482U5A6401171F1812051900781200<129676",
+          "confidence": 0.625,
+          "bounding_box": {
+            "x1": 41,
+            "y1": 879,
+            "x2": 1262,
+            "y2": 931
+          }
+        },
+        {
+          "text": "Tipo",
+          "confidence": 0.998,
+          "bounding_box": {
+            "x1": 596,
+            "y1": 81,
+            "x2": 651,
+            "y2": 115
+          }
+        },
+        {
+          "text": "Aug",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 508,
+            "y1": 407,
+            "x2": 585,
+            "y2": 457
+          }
+        },
+        {
+          "text": "Sex",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 1103,
+            "y1": 453,
+            "x2": 1149,
+            "y2": 484
+          }
+        }
+      ],
+      "mrz_lines": [
+        "P<DELAPAZ<<MICHELLE<<<<<<<<<<<<<<<<K<K<<<<<"
+      ]
+    },
+    {
+      "detector_name": "mrz_parser",
+      "score": 0.0,
+      "confidence": "high",
+      "explanation": "All MRZ check digits valid.",
+      "status": "passed",
+      "fields": {
+        "doc_type": "P",
+        "country_code": "DEL",
+        "surname": "APAZ",
+        "given_names": "MICHELLE                K K",
+        "passport_number": "910239248",
+        "nationality": "U5A",
+        "dob": "640117",
+        "sex": "F",
+        "expiry": "181205",
+        "personal_number": "9007812001296",
+        "check_digit_results": {
+          "passport_number": "PASS",
+          "dob": "PASS",
+          "expiry": "PASS",
+          "personal_number": "PASS",
+          "composite": "PASS"
+        },
+        "date_validity_results": {
+          "dob": "PASS",
+          "expiry": "PASS"
+        }
+      },
+      "issues": []
+    },
+    {
+      "detector_name": "document_classifier",
+      "score": 0.15,
+      "confidence": "high",
+      "explanation": "Classified as passport (score 0.85).",
+      "status": "passed",
+      "doc_type": "passport"
+    },
+    {
+      "detector_name": "field_validator",
+      "score": 0.7,
+      "confidence": "high",
+      "explanation": "Field validation failures: passport_number, expiry",
+      "status": "flagged",
+      "field_results": [
+        {
+          "field": "passport_number",
+          "status": "flagged",
+          "value": "910239248",
+          "explanation": "Passport number '910239248' format INVALID (expected: 1 letter + 7 digits)."
+        },
+        {
+          "field": "dob",
+          "status": "passed",
+          "value": "1964-01-17",
+          "explanation": "DOB 1964-01-17 is valid (age ~62)."
+        },
+        {
+          "field": "expiry",
+          "status": "flagged",
+          "value": "2018-12-05",
+          "explanation": "Document EXPIRED on 2018-12-05."
+        },
+        {
+          "field": "sex",
+          "status": "passed",
+          "value": "F",
+          "explanation": "Sex field 'F' is valid."
+        },
+        {
+          "field": "country_code",
+          "status": "passed",
+          "value": "DEL",
+          "explanation": "Country code 'DEL' is valid."
+        }
+      ]
+    },
+    {
+      "detector_name": "ocr_mrz_consistency",
+      "score": 0.0,
+      "confidence": "high",
+      "explanation": "All OCR and MRZ fields match.",
+      "status": "passed",
+      "mismatches": []
+    },
+    {
+      "detector_name": "exiftool",
+      "score": 0.35,
+      "confidence": "low",
+      "explanation": "No camera EXIF metadata found. Common on scans and shared files; weak signal only.",
+      "status": "passed"
+    },
+    {
+      "detector_name": "c2pa",
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "No C2PA Content Credentials manifest found (typical for standard or unsigned media).",
+      "status": "unavailable"
+    },
+    {
+      "detector_name": "cfa_demosaicing_analysis",
+      "score": 0.85,
+      "confidence": "medium",
+      "explanation": "Bayer CFA grid residual ratio computed at 4.29. Lacks physical camera Bayer filter demosaicing signature.",
+      "status": "flagged"
+    },
+    {
+      "detector_name": "hf_vision_transformer",
+      "score": 0.25,
+      "confidence": "high",
+      "explanation": "Ensemble of 2 Hugging Face Vision Transformers evaluated synthetic probability at 25%.",
+      "status": "passed"
+    },
+    {
+      "detector_name": "resampling_interpolation_analysis",
+      "score": 0.8,
+      "confidence": "medium",
+      "explanation": "Periodic interpolation artifacts detected (metric: 971.08). Image shows signs of AI upscaling or non-native resampling.",
+      "status": "flagged"
+    },
+    {
+      "detector_name": "ela_compression",
+      "score": 0.09,
+      "confidence": "medium",
+      "explanation": "Error Level Analysis computed pixel difference variance of 1.32.",
+      "status": "passed"
+    },
+    {
+      "detector_name": "histogram_color_forensics",
+      "score": 0.15,
+      "confidence": "medium",
+      "explanation": "Color channel entropy computed at 7.23 bits. Standard natural RGB channel distribution.",
+      "status": "passed"
+    },
+    {
+      "detector_name": "frequency_domain_fft",
+      "score": 0.8,
+      "confidence": "medium",
+      "explanation": "FFT spectral power calculated at 170.83 dB. High-frequency grid noise detected.",
+      "status": "flagged"
+    },
+    {
+      "detector_name": "copy_move_forgery",
+      "score": 0.0,
+      "confidence": "medium",
+      "explanation": "Found 0 suspicious duplicated feature clusters. No duplicate region cloning detected.",
+      "status": "passed"
+    },
+    {
+      "detector_name": "blur_sharpness_analysis",
+      "score": 0.15,
+      "confidence": "medium",
+      "explanation": "Standard physical lens focus distribution (sharpness metric: 832.61).",
+      "status": "passed"
+    },
+    {
+      "detector_name": "perceptual_hashing",
+      "score": 0.1,
+      "confidence": "high",
+      "explanation": "Generated perceptual signatures for duplicate cross-referencing.",
+      "status": "passed"
+    },
+    {
+      "detector_name": "jpeg_ghost_analysis",
+      "score": 0.85,
+      "confidence": "medium",
+      "explanation": "JPEG Ghost variance computed at 0.64. Suspicious uniform compression grid detected.",
+      "status": "flagged"
+    },
+    {
+      "detector_name": "jpeg_quantization_analysis",
+      "score": 0.1,
+      "confidence": "low",
+      "explanation": "Non-JPEG file format. Quantization table inspection bypassed.",
+      "status": "unavailable"
+    },
+    {
+      "detector_name": "inpainting_trace_analysis",
+      "score": 0.15,
+      "confidence": "medium",
+      "explanation": "Inpainting edge boundary dispersion ratio computed at 1.29. Uniform pixel edge continuity verified across image patches.",
+      "status": "passed"
+    },
+    {
+      "detector_name": "vision_llm_sanity_analysis",
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "GEMINI_API_KEY missing. Vision LLM scene inspection bypassed.",
+      "status": "unavailable"
+    },
+    {
+      "detector_name": "photo_patch_forensics",
+      "score": 0.105,
+      "confidence": "high",
+      "explanation": "Photo-patch forensics on document face crop. ELA score=0.01 (Error Level Analysis computed pixel difference variance of 0.18.). Resampling score=0.2 (Standard organic pixel continuity verified (metric: 337.16).).",
+      "status": "passed"
+    },
+    {
+      "detector_name": "face_verification",
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "No live image provided; face match skipped.",
+      "status": "unavailable"
+    },
+    {
+      "detector_name": "liveness_analysis",
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "No live image provided; liveness skipped.",
+      "status": "unavailable"
+    },
+    {
+      "detector_name": "duplicate_identity_check",
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "No live image provided; duplicate-ID skipped.",
+      "status": "unavailable"
+    }
+  ],
+  "human_summary": "GEMINI_API_KEY missing; skipping AI-generated summary."
+}

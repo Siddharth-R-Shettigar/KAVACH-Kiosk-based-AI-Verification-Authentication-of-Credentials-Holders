@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def _safe_import(module_path, func_name):
     """Import a detector function without crashing the whole engine if it fails."""
     try:
@@ -14,6 +15,8 @@ def _safe_import(module_path, func_name):
         print(f"[WARNING] Could not load {module_path}.{func_name}: {e}", file=sys.stderr)
         return None
 
+
+# --- Forensic / image detectors ---
 run_exif_detector = _safe_import("detectors.exif_detector", "run_exif_detector")
 run_c2pa_detector = _safe_import("detectors.c2pa_detector", "run_c2pa_detector")
 run_ela_detector = _safe_import("detectors.ela_detector", "run_ela_detector")
@@ -29,95 +32,506 @@ run_resampling_detector = _safe_import("detectors.resampling_detector", "run_res
 run_quantization_detector = _safe_import("detectors.quantization_detector", "run_quantization_detector")
 run_inpainting_detector = _safe_import("detectors.inpainting_detector", "run_inpainting_detector")
 run_vision_llm_inspector = _safe_import("detectors.vision_llm_inspector", "run_vision_llm_inspector")
+run_photo_tampering_detector = _safe_import("detectors.photo_tampering_detector", "run_photo_tampering_detector")
+
+# --- Face ---
 run_face_verification = _safe_import("detectors.face_verification_engine", "run_face_verification")
+run_liveness_detection = _safe_import("detectors.liveness_detector", "run_liveness_detection")
+run_duplicate_id_detector = _safe_import("detectors.duplicate_id_detector", "run_duplicate_id_detector")
+
+# --- Text / document (subgroup 1) ---
+extract_text = _safe_import("detectors.ocr_extraction", "extract_text")
+parse_mrz = _safe_import("detectors.mrz_parser", "parse_mrz")
+classify_document = _safe_import("detectors.document_classifier", "classify_document")
+validate_document_fields = _safe_import("detectors.field_validator", "validate_document_fields")
+check_ocr_mrz_consistency = _safe_import("detectors.ocr_mrz_consistency", "check_ocr_mrz_consistency")
+check_qr_consistency = _safe_import("detectors.qr_barcode", "check_qr_consistency")
 
 
-def analyze_media(image_path):
+def _confidence_str(value):
+    if value is None:
+        return "low"
+    if isinstance(value, str):
+        v = value.lower()
+        if v in ("low", "medium", "high"):
+            return v
+        return "medium"
+    try:
+        x = float(value)
+        if x >= 0.75:
+            return "high"
+        if x >= 0.4:
+            return "medium"
+        return "low"
+    except (TypeError, ValueError):
+        return "low"
+
+
+def _normalize(detector_name, raw, score_means_risk=True):
+    """
+    Force every module into:
+    detector_name, score (0=clean risk … 1=high risk), confidence str, explanation, status
+    """
+    if raw is None:
+        return {
+            "detector_name": detector_name,
+            "score": 0.5,
+            "confidence": "low",
+            "explanation": "Detector unavailable (import or call failed).",
+            "status": "unavailable",
+        }
+
+    status = str(raw.get("status", "unavailable")).lower()
+    # Map odd status words from some modules
+    if status in ("pass", "ok", "success"):
+        status = "passed"
+    if status in ("fail", "error"):
+        status = "failed"
+
+    explanation = raw.get("explanation") or raw.get("details") or ""
+    conf = _confidence_str(raw.get("confidence"))
+
+    try:
+        base = float(raw.get("score", 0.5))
+    except (TypeError, ValueError):
+        base = 0.5
+
+    if score_means_risk:
+        risk = base
+    else:
+        # Validators: high score = healthy document → low risk
+        if status == "flagged":
+            risk = max(0.7, 1.0 - base)
+        elif status == "passed":
+            risk = min(0.25, 1.0 - base)
+        elif status in ("failed", "unavailable"):
+            risk = 0.5
+        else:
+            risk = 1.0 - base
+
+    risk = round(min(max(risk, 0.0), 1.0), 3)
+
+    out = {
+        "detector_name": raw.get("detector_name") or detector_name,
+        "score": risk,
+        "confidence": conf,
+        "explanation": explanation,
+        "status": status if status in ("passed", "flagged", "failed", "unavailable") else "unavailable",
+    }
+    # Keep useful extras for debugging / UI
+    for key in ("doc_type", "fields", "mrz_lines", "issues", "mismatches", "field_results"):
+        if key in raw:
+            out[key] = raw[key]
+    return out
+
+
+def _run_safe(fn, *args, detector_name="unknown", score_means_risk=True, **kwargs):
+    if fn is None:
+        return _normalize(detector_name, None, score_means_risk=score_means_risk)
+    try:
+        raw = fn(*args, **kwargs)
+        return _normalize(detector_name, raw, score_means_risk=score_means_risk)
+    except Exception as e:
+        return {
+            "detector_name": detector_name,
+            "score": 0.5,
+            "confidence": "low",
+            "explanation": f"Detector crashed: {e}",
+            "status": "failed",
+        }
+
+
+def _risk_level(signals, forensic_risk):
+    """Fail-closed style decision from statuses + forensic blend."""
+    statuses = {s["detector_name"]: s for s in signals}
+
+    def st(name):
+        return statuses.get(name, {}).get("status")
+
+    # Hard problems → HIGH RISK
+    if st("face_verification") == "flagged":
+        return "HIGH RISK", "Face on document does not match live capture."
+    if st("ocr_mrz_consistency") == "flagged":
+        return "HIGH RISK", "OCR and MRZ data disagree."
+    if st("mrz_parser") == "flagged":
+        return "HIGH RISK", "MRZ check digits or structure failed."
+
+    # Missing critical evidence → REVIEW (never auto PASS)
+    critical_missing = []
+    for name in ("ocr_extraction", "mrz_parser", "ocr_mrz_consistency"):
+        if st(name) in ("failed", "unavailable", None):
+            critical_missing.append(name)
+    if critical_missing:
+        return "REVIEW", f"Critical checks not available: {', '.join(critical_missing)}."
+
+    if st("liveness_analysis") == "flagged":
+        return "REVIEW", "Liveness check suggests possible presentation attack."
+    if st("duplicate_identity_check") == "flagged":
+        return "REVIEW", "Possible duplicate identity match in local store."
+    if st("photo_patch_forensics") == "flagged":
+        return "REVIEW", "Document face photo region shows forensic anomalies."
+
+    if forensic_risk >= 0.55:
+        return "HIGH RISK", "Combined forensic risk is high."
+    if forensic_risk >= 0.35:
+        return "REVIEW", "Combined forensic risk is moderate."
+
+    # Any other flagged signal → at least REVIEW
+    flagged = [s["detector_name"] for s in signals if s.get("status") == "flagged"]
+    if flagged:
+        return "REVIEW", f"Flagged signals: {', '.join(flagged[:6])}."
+
+    return "PASS", "No strong risk signals from available checks."
+
+
+def _clean_mrz_candidate(text: str) -> str:
+    """Normalize a possible MRZ string from OCR."""
+    if not text:
+        return ""
+    t = text.upper().replace(" ", "")
+    # Common OCR confusions near '<'
+    for ch in ("«", "‹", "(", "{", "[", "_", "–", "—", "~"):
+        t = t.replace(ch, "<")
+    # Keep only MRZ alphabet
+    t = "".join(c for c in t if c.isalnum() or c == "<")
+    return t
+
+
+def _collect_mrz_lines(ocr_raw: dict) -> list:
+    """
+    Build up to 2 TD3-style MRZ lines from OCR output.
+    Uses official mrz_lines first, then long field tokens.
+    """
+    if not isinstance(ocr_raw, dict):
+        return []
+
+    candidates = []
+
+    for line in ocr_raw.get("mrz_lines") or []:
+        cleaned = _clean_mrz_candidate(str(line))
+        if cleaned:
+            candidates.append(cleaned)
+
+    for f in ocr_raw.get("fields") or []:
+        if isinstance(f, dict):
+            text = f.get("text") or ""
+        else:
+            text = str(f)
+        cleaned = _clean_mrz_candidate(text)
+        if not cleaned:
+            continue
+        # MRZ-like: long, has '<' or starts with P< or is mostly ID+digits
+        if len(cleaned) >= 28 and (cleaned.startswith("P<") or cleaned.count("<") >= 2 or sum(c.isdigit() for c in cleaned) >= 10):
+            candidates.append(cleaned)
+
+    # Deduplicate, keep order
+    seen = set()
+    uniq = []
+    for c in candidates:
+        if c not in seen:
+            seen.add(c)
+            uniq.append(c)
+
+    line1 = None
+    line2 = None
+
+    for c in uniq:
+        if c.startswith("P<") and line1 is None:
+            line1 = c
+            break
+    if line1 is None and uniq:
+        # fallback: longest line with '<'
+        with_chevron = [c for c in uniq if "<" in c]
+        line1 = max(with_chevron, key=len) if with_chevron else uniq[0]
+
+    for c in uniq:
+        if c is line1:
+            continue
+        # Second MRZ line is usually digits + letters, may start with passport number
+        if not c.startswith("P<") and len(c) >= 28:
+            line2 = c
+            break
+    if line2 is None:
+        for c in uniq:
+            if c is not line1 and len(c) >= 28:
+                line2 = c
+                break
+
+    lines = []
+    if line1:
+        # TD3 is 44 chars; pad/truncate lightly for parser stability
+        lines.append(line1[:44].ljust(44, "<"))
+    if line2:
+        lines.append(line2[:44].ljust(44, "<"))
+
+    return lines
+
+
+def analyze_media(image_path, live_image_path=None):
+    """
+    Full KAVACH screening on a document image.
+    Optional live_image_path enables face match + liveness + duplicate checks.
+    """
     if not os.path.exists(image_path):
         return {"error": f"File {image_path} not found."}
 
     ext = os.path.splitext(image_path)[1].lower()
-    is_jpeg = ext in ['.jpg', '.jpeg']
+    is_jpeg = ext in [".jpg", ".jpeg"]
 
-    # (function, weight, requires_jpeg)
-    # NOTE: weights below are a starting point, not calibrated. See Fix 6 (calibration_test.py)
-    # before trusting these numbers for a real demo.
-    detector_pipeline = [
-        (run_exif_detector, 1.5, False),
-        (run_c2pa_detector, 0.0, False),          # neutral when missing; excluded from weighted mean
-        (run_cfa_detector, 2.0, False),
-        (run_hf_ai_detector, 2.0, False),
-        (run_resampling_detector, 1.5, False),
-        (run_ela_detector, 1.0, False),
-        (run_histogram_detector, 0.8, False),
-        (run_frequency_detector, 0.8, False),
-        (run_copy_move_detector, 1.0, False),
-        (run_blur_detector, 0.8, False),
-        (run_phash_detector, 0.0, False),         # hash generation only, not a fakeness signal
-        (run_jpeg_ghost_detector, 1.2, True),
-        (run_quantization_detector, 1.2, True),
-        (run_inpainting_detector, 1.0, False),
-        (run_vision_llm_inspector, 1.5, False),   # requires GEMINI_API_KEY
+    signals = []
+
+    # ----- 1) OCR -----
+    ocr_raw = None
+    if extract_text is not None:
+        try:
+            ocr_raw = extract_text(image_path)
+        except Exception as e:
+            ocr_raw = {
+                "status": "failed",
+                "score": 0.0,
+                "confidence": "low",
+                "explanation": str(e),
+                "fields": [],
+                "mrz_lines": [],
+            }
+    signals.append(_normalize("ocr_extraction", ocr_raw, score_means_risk=False))
+
+    ocr_text = ""
+    mrz_lines = []
+    ocr_fields_for_consistency = {}
+    if isinstance(ocr_raw, dict):
+        mrz_lines = ocr_raw.get("mrz_lines") or []
+        # Build a flat text blob for classifier
+        parts = []
+        for f in ocr_raw.get("fields") or []:
+            if isinstance(f, dict) and f.get("text"):
+                parts.append(str(f["text"]))
+            elif isinstance(f, str):
+                parts.append(f)
+        ocr_text = " ".join(parts)
+
+    # ----- 2) MRZ -----
+    mrz_raw = None
+    mrz_fields = {}
+    mrz_lines = _collect_mrz_lines(ocr_raw if isinstance(ocr_raw, dict) else {})
+
+    if parse_mrz is not None and len(mrz_lines) >= 2:
+        try:
+            mrz_raw = parse_mrz(mrz_lines)
+            mrz_fields = (mrz_raw or {}).get("fields") or {}
+        except Exception as e:
+            mrz_raw = {
+                "status": "failed",
+                "score": 0.0,
+                "confidence": "low",
+                "explanation": str(e),
+                "fields": {},
+            }
+    elif parse_mrz is not None:
+        mrz_raw = {
+            "status": "unavailable",
+            "score": 0.0,
+            "confidence": "low",
+            "explanation": f"Could not build two MRZ lines from OCR (got {len(mrz_lines)}: {mrz_lines}).",
+            "fields": {},
+            "issues": ["Two MRZ lines are required."],
+        }
+    signals.append(_normalize("mrz_parser", mrz_raw, score_means_risk=False))
+
+    # Map common MRZ fields for consistency checker (best-effort)
+    if mrz_fields:
+        ocr_fields_for_consistency = {
+            "passport_number": mrz_fields.get("passport_number") or mrz_fields.get("document_number") or "",
+            "dob": mrz_fields.get("dob") or mrz_fields.get("date_of_birth") or "",
+            "expiry": mrz_fields.get("expiry") or mrz_fields.get("date_of_expiry") or "",
+            "surname": mrz_fields.get("surname") or mrz_fields.get("primary_identifier") or "",
+            "nationality": mrz_fields.get("nationality") or mrz_fields.get("country_code") or "",
+        }
+        # Prefer explicit OCR fields if the OCR module later adds them; for now MRZ vs MRZ is weak.
+        # Real OCR field parsing can improve this later.
+
+    # ----- 3) Document class -----
+    if classify_document is not None:
+        signals.append(
+            _run_safe(
+                classify_document,
+                image_path,
+                ocr_text,
+                detector_name="document_classifier",
+                score_means_risk=False,
+            )
+        )
+
+    # ----- 4) Field validation -----
+    if validate_document_fields is not None and mrz_fields:
+        signals.append(
+            _run_safe(
+                validate_document_fields,
+                mrz_fields,
+                "passport",
+                detector_name="field_validator",
+                score_means_risk=False,
+            )
+        )
+    else:
+        signals.append(
+            _normalize(
+                "field_validator",
+                {
+                    "status": "unavailable",
+                    "score": 0.0,
+                    "confidence": "low",
+                    "explanation": "Skipped; no MRZ fields available.",
+                },
+                score_means_risk=False,
+            )
+        )
+
+    # ----- 5) OCR ↔ MRZ -----
+    if check_ocr_mrz_consistency is not None and mrz_fields:
+        # Until OCR exposes named fields, compare using MRZ-derived dict as placeholder
+        # so the module still runs; subgroup1 can improve OCR field keys later.
+        signals.append(
+            _run_safe(
+                check_ocr_mrz_consistency,
+                ocr_fields_for_consistency,
+                mrz_fields,
+                detector_name="ocr_mrz_consistency",
+                score_means_risk=False,
+            )
+        )
+    else:
+        signals.append(
+            _normalize(
+                "ocr_mrz_consistency",
+                {
+                    "status": "unavailable",
+                    "score": 0.0,
+                    "confidence": "low",
+                    "explanation": "Skipped; need OCR fields + MRZ fields.",
+                },
+                score_means_risk=False,
+            )
+        )
+
+    # ----- 6) QR (optional) -----
+    if check_qr_consistency is not None:
+        signals.append(
+            _run_safe(
+                check_qr_consistency,
+                image_path,
+                ocr_fields_for_consistency,
+                detector_name="qr_barcode",
+                score_means_risk=False,
+            )
+        )
+
+    # ----- 7) Forensics (sequential) -----
+    forensic_pipeline = [
+        (run_exif_detector, "exiftool", 0.4, False),
+        (run_c2pa_detector, "c2pa", 0.0, False),
+        (run_cfa_detector, "cfa_demosaicing_analysis", 1.0, False),
+        (run_hf_ai_detector, "hf_vision_transformer", 1.2, False),
+        (run_resampling_detector, "resampling_interpolation_analysis", 1.8, False),
+        (run_ela_detector, "ela_compression", 1.3, False),
+        (run_histogram_detector, "histogram_color_forensics", 0.5, False),
+        (run_frequency_detector, "frequency_domain_fft", 0.5, False),
+        (run_copy_move_detector, "copy_move_forgery", 2.0, False),
+        (run_blur_detector, "blur_sharpness_analysis", 0.5, False),
+        (run_phash_detector, "phash", 0.0, False),
+        (run_jpeg_ghost_detector, "jpeg_ghost_analysis", 1.0, True),
+        (run_quantization_detector, "jpeg_quantization_analysis", 1.0, True),
+        (run_inpainting_detector, "inpainting", 1.0, False),
+        (run_vision_llm_inspector, "vision_llm_sanity_analysis", 1.2, False),
+        (run_photo_tampering_detector, "photo_patch_forensics", 2.0, False),
     ]
 
-    results = []
-    weighted_score_sum = 0.0
+    weighted_sum = 0.0
     total_weight = 0.0
 
-    for detector_fn, weight, req_jpeg in detector_pipeline:
-        if detector_fn is None:
-            continue  # this detector's module failed to import — skip it, don't crash
+    for fn, name, weight, req_jpeg in forensic_pipeline:
         if req_jpeg and not is_jpeg:
             continue
-
-        try:
-            res = detector_fn(image_path)
-        except Exception as e:
-            res = {
-                "detector_name": getattr(detector_fn, "__name__", "unknown_detector"),
-                "score": 0.5,
-                "confidence": "low",
-                "explanation": f"Detector crashed during execution: {e}"
-            }
-
-        results.append(res)
-
-        if weight > 0.0 and "score" in res and res.get("confidence") != "low":
-            weighted_score_sum += res["score"] * weight
+        sig = _run_safe(fn, image_path, detector_name=name, score_means_risk=True)
+        signals.append(sig)
+        if weight > 0 and sig.get("confidence") != "low" and sig.get("status") not in ("failed", "unavailable"):
+            weighted_sum += sig["score"] * weight
             total_weight += weight
 
-    final_synthetic_score = weighted_score_sum / max(total_weight, 1.0)
-    synthetic_prob = int(round(final_synthetic_score * 100))
-    authentic_prob = max(0, 100 - synthetic_prob)
+    forensic_risk = weighted_sum / max(total_weight, 1.0)
+
+    # ----- 8) Face stack (needs live image) -----
+    if live_image_path and os.path.exists(live_image_path):
+        signals.append(
+            _run_safe(
+                run_face_verification,
+                image_path,
+                live_image_path,
+                detector_name="face_verification",
+                score_means_risk=True,
+            )
+        )
+        signals.append(
+            _run_safe(
+                run_liveness_detection,
+                live_image_path,
+                detector_name="liveness_analysis",
+                score_means_risk=True,
+            )
+        )
+        signals.append(
+            _run_safe(
+                run_duplicate_id_detector,
+                live_image_path,
+                detector_name="duplicate_identity_check",
+                score_means_risk=True,
+            )
+        )
+    else:
+        for name, expl in [
+            ("face_verification", "No live image provided; face match skipped."),
+            ("liveness_analysis", "No live image provided; liveness skipped."),
+            ("duplicate_identity_check", "No live image provided; duplicate-ID skipped."),
+        ]:
+            signals.append(
+                _normalize(
+                    name,
+                    {
+                        "status": "unavailable",
+                        "score": 0.5,
+                        "confidence": "low",
+                        "explanation": expl,
+                    },
+                    score_means_risk=True,
+                )
+            )
+
+    level, reason = _risk_level(signals, forensic_risk)
 
     return {
-        "engine": "KAVACH (Verifiable Evidence & Digital Authenticity)",
+        "engine": "KAVACH",
         "file_analyzed": os.path.basename(image_path),
-        "probabilities": {
-            "authentic_capture": f"{authentic_prob}%",
-            "synthetic_ai_generated": f"{synthetic_prob}%"
-        },
-        "overall_confidence": "high",
-        "active_detectors_evaluated": len(results),
-        "detector_signals": results
+        "live_image": os.path.basename(live_image_path) if live_image_path else None,
+        "risk_level": level,
+        "risk_reason": reason,
+        "forensic_risk_score": round(forensic_risk, 3),
+        "active_detectors_evaluated": len(signals),
+        "detector_signals": signals,
     }
 
 
-def analyze_file(path):
-    """Routes any uploaded file to the right pipeline based on its extension."""
+def analyze_file(path, live_image_path=None):
     ext = os.path.splitext(path)[1].lower()
     image_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
-    
-
     if ext in image_exts:
-        return analyze_media(path)
-    else:
-        return {"error": f"Unsupported file type: {ext}"}
-    
+        return analyze_media(path, live_image_path=live_image_path)
+    return {"error": f"Unsupported file type: {ext}"}
+
 
 if __name__ == "__main__":
     target = sys.argv[1] if len(sys.argv) > 1 else "DSC_0153.JPG"
-    report = analyze_file(target)
+    live = sys.argv[2] if len(sys.argv) > 2 else None
+    report = analyze_file(target, live_image_path=live)
 
     try:
         from llm_fusion import generate_human_summary
@@ -127,7 +541,6 @@ if __name__ == "__main__":
 
     print(json.dumps(report, indent=2))
 
-    # Save a copy of every analysis to disk, one file per case
     os.makedirs("case_logs", exist_ok=True)
     safe_name = os.path.splitext(os.path.basename(target))[0]
     log_path = os.path.join("case_logs", f"{safe_name}_report.json")

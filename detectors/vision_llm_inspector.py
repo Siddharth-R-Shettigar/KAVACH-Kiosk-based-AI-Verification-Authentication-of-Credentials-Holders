@@ -21,12 +21,13 @@ def run_vision_llm_inspector(image_path):
             encoded_image = base64.b64encode(f.read()).decode("utf-8")
 
         prompt = """
-        You are an expert digital forensics visual examiner. Inspect this image for AI generative artifacts:
-        1. Human anatomy: count fingers, check hand symmetry, teeth structure, and ear geometry.
-        2. Scene logic & semantic sanity: shadows, atmospheric consistency, object perspective, text/logo legibility.
+        You are a border-control document examiner. Inspect this identity document image for tampering or fraud risk.
+        Look for: replaced or pasted photograph, retyped or misaligned text, altered dates or numbers,
+        suspicious stamps, layout inconsistencies, or signs the page was digitally edited.
+        Do NOT focus on general AI-art artifacts (fingers, fantasy scenes) unless relevant to an ID photo.
 
         Respond STRICTLY with a raw JSON object (no markdown, no backticks):
-        {"score": <float between 0.0 for perfectly natural real photo to 1.0 for synthetic AI>, "explanation": "<1-2 sentence plain text verdict>"}
+        {"score": <float 0.0 = looks genuine to 1.0 = strong tampering risk>, "explanation": "<1-2 sentence plain text>"}
         """
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
