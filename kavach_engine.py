@@ -509,7 +509,7 @@ def analyze_media(image_path, live_image_path=None):
     forensic_pipeline = [
         (run_exif_detector, "exiftool", 0.4, False),
         (run_c2pa_detector, "c2pa", 0.0, False),
-        (run_cfa_detector, "cfa_demosaicing_analysis", 1.0, False),
+        (run_cfa_detector, "cfa_demosaicing_analysis", 1.8, False),      # was 1.0 → restore for grafted photo regions
         (run_hf_ai_detector, "hf_vision_transformer", 1.2, False),
         (run_resampling_detector, "resampling_interpolation_analysis", 1.8, False),
         (run_ela_detector, "ela_compression", 1.3, False),
@@ -518,10 +518,10 @@ def analyze_media(image_path, live_image_path=None):
         (run_copy_move_detector, "copy_move_forgery", 2.0, False),
         (run_blur_detector, "blur_sharpness_analysis", 0.5, False),
         (run_phash_detector, "phash", 0.0, False),
-        (run_jpeg_ghost_detector, "jpeg_ghost_analysis", 1.0, True),
+        (run_jpeg_ghost_detector, "jpeg_ghost_analysis", 0.4, True),     # was 1.0 → lower (weak global signal)
         (run_quantization_detector, "jpeg_quantization_analysis", 1.0, True),
-        (run_inpainting_detector, "inpainting", 1.0, False),
-        (run_vision_llm_inspector, "vision_llm_sanity_analysis", 1.2, False),
+        (run_inpainting_detector, "inpainting", 1.5, False),             # was 1.0 → text/photo erasure+reprint
+        (run_vision_llm_inspector, "vision_llm_sanity_analysis", 1.5, False),  # was 1.2 → layout/font/photo placement
         (run_photo_tampering_detector, "photo_patch_forensics", 2.0, False),
     ]
 
