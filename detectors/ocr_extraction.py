@@ -3,24 +3,25 @@
 import os
 import re
 import cv2
-import easyocr
 import argparse
 import numpy as np
-from PIL import Image
+from paddleocr import PaddleOCR
 
 _reader = None
 
-
 def get_reader(gpu: bool = False):
     """
-    Initializes and caches the EasyOCR reader singleton.
+    Initializes and caches the PaddleOCR reader singleton (v2.8.1).
     """
     global _reader
     if _reader is None:
-        # Load English model by default
-        _reader = easyocr.Reader(['en'], gpu=gpu)
+        _reader = PaddleOCR(
+            use_angle_cls=True, 
+            lang='en', 
+            use_gpu=gpu, 
+            show_log=False
+        )
     return _reader
-
 
 def clean_mrz_text(raw_text: str) -> str:
     """
@@ -88,40 +89,16 @@ def extract_mrz_candidates(reconstructed_lines: list) -> list:
         # Check if string has substantial length and high density of chevrons/uppercase tokens
         if len(cleaned) >= 28:
             chevron_count = cleaned.count('<')
-            # Real MRZ lines contain multiple chevrons or start with standard doc prefixes (P<, I<, C<, V<)
+            # Real MRZ lines contain multiple chevrons or start with standard doc prefixes (P<, I<, C<, V<, A<)
             if chevron_count >= 2 or cleaned.startswith(('P<', 'I<', 'C<', 'V<', 'A<')):
                 mrz_candidates.append(cleaned)
 
     return mrz_candidates
 
 
-def preprocess_for_ocr(image_path: str, scale_factor: float = 2.0):
-    """
-    Enhances blurry images before sending them to EasyOCR.
-    Returns the processed image and the scale factor used.
-    """
-    img = cv2.imread(image_path)
-    if img is None:
-        raise ValueError(f"Unable to load image at {image_path}")
-        
-    # Convert to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-    # Upscale the image to give OCR more pixels for blurry edges
-    upscaled = cv2.resize(gray, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
-    
-    # Apply a sharpening kernel
-    kernel = np.array([[0, -1, 0], 
-                       [-1, 5, -1], 
-                       [0, -1, 0]])
-    sharpened = cv2.filter2D(upscaled, -1, kernel)
-    
-    return sharpened, scale_factor
-
-
 def extract_text(image_path: str, gpu: bool = False) -> dict:
     """
-    Extracts text regions, aggregates segmented lines, and isolates MRZ lines.
+    Extracts text regions using PaddleOCR, aggregates segmented lines, and isolates MRZ lines.
     """
     if not os.path.exists(image_path):
         return {
@@ -136,29 +113,35 @@ def extract_text(image_path: str, gpu: bool = False) -> dict:
         }
 
     try:
-        # Preprocess the image
-        processed_img, scale = preprocess_for_ocr(image_path, scale_factor=2.0)
-        
         reader = get_reader(gpu=gpu)
-        results = reader.readtext(processed_img)
-
+        
+        # PaddleOCR handles standard file paths seamlessly and performs internal optimizations
+        # ocr() returns a list of results. result[0] contains the actual text blocks.
+        raw_results = reader.ocr(image_path, cls=True)
+        
         fields = []
-        for (bbox, text, confidence) in results:
-            text_clean = text.strip()
-            if not text_clean:
-                continue
+        # If text is detected, raw_results[0] will be populated
+        if raw_results and raw_results[0]:
+            for element in raw_results[0]:
+                bbox_polygon = element[0] # Returns 4 coordinates: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                text = element[1][0]
+                confidence = element[1][1]
 
-            # Scale coordinates back down to match the original image size
-            x_coords = [pt[0] / scale for pt in bbox]
-            y_coords = [pt[1] / scale for pt in bbox]
-            x1, y1 = int(min(x_coords)), int(min(y_coords))
-            x2, y2 = int(max(x_coords)), int(max(y_coords))
+                text_clean = text.strip()
+                if not text_clean:
+                    continue
 
-            fields.append({
-                "text": text_clean,
-                "confidence": round(float(confidence), 3),
-                "bounding_box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
-            })
+                # Convert polygon back to standard x1, y1, x2, y2 bounding box for downstream logic
+                x_coords = [pt[0] for pt in bbox_polygon]
+                y_coords = [pt[1] for pt in bbox_polygon]
+                x1, y1 = int(min(x_coords)), int(min(y_coords))
+                x2, y2 = int(max(x_coords)), int(max(y_coords))
+
+                fields.append({
+                    "text": text_clean,
+                    "confidence": round(float(confidence), 3),
+                    "bounding_box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
+                })
 
         # Reconstruct fragmented horizontal boxes into coherent lines
         reconstructed_lines = group_text_into_lines(fields)
@@ -230,7 +213,7 @@ def draw_bounding_boxes(image_path: str, ocr_result: dict, output_path: str = "o
 
 if __name__ == "__main__":
     # Setup argparse for robust terminal inputs
-    parser = argparse.ArgumentParser(description="Extract text and MRZ from an image using EasyOCR.")
+    parser = argparse.ArgumentParser(description="Extract text and MRZ from an image using PaddleOCR.")
     parser.add_argument(
         "-i", "--image", 
         required=True, 
@@ -239,7 +222,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--gpu", 
         action="store_true", 
-        help="Enable GPU acceleration for EasyOCR"
+        help="Enable GPU acceleration for PaddleOCR"
     )
     
     args = parser.parse_args()
@@ -259,5 +242,5 @@ if __name__ == "__main__":
         print(f"Total Tokens Extracted: {len(result.get('fields', []))}")
         print(f"Average Confidence: {result.get('confidence', 0.0)}")
         
-        # Save visual debug output using the original image path
+        # Save visual debug output 
         draw_bounding_boxes(args.image, result)
