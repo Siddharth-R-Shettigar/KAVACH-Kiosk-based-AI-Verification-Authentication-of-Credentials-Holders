@@ -4,6 +4,7 @@ import os
 import re
 import cv2
 import easyocr
+import argparse
 import numpy as np
 from PIL import Image
 
@@ -94,6 +95,30 @@ def extract_mrz_candidates(reconstructed_lines: list) -> list:
     return mrz_candidates
 
 
+def preprocess_for_ocr(image_path: str, scale_factor: float = 2.0):
+    """
+    Enhances blurry images before sending them to EasyOCR.
+    Returns the processed image and the scale factor used.
+    """
+    img = cv2.imread(image_path)
+    if img is None:
+        raise ValueError(f"Unable to load image at {image_path}")
+        
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Upscale the image to give OCR more pixels for blurry edges
+    upscaled = cv2.resize(gray, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+    
+    # Apply a sharpening kernel
+    kernel = np.array([[0, -1, 0], 
+                       [-1, 5, -1], 
+                       [0, -1, 0]])
+    sharpened = cv2.filter2D(upscaled, -1, kernel)
+    
+    return sharpened, scale_factor
+
+
 def extract_text(image_path: str, gpu: bool = False) -> dict:
     """
     Extracts text regions, aggregates segmented lines, and isolates MRZ lines.
@@ -111,8 +136,11 @@ def extract_text(image_path: str, gpu: bool = False) -> dict:
         }
 
     try:
+        # Preprocess the image
+        processed_img, scale = preprocess_for_ocr(image_path, scale_factor=2.0)
+        
         reader = get_reader(gpu=gpu)
-        results = reader.readtext(image_path)
+        results = reader.readtext(processed_img)
 
         fields = []
         for (bbox, text, confidence) in results:
@@ -120,8 +148,9 @@ def extract_text(image_path: str, gpu: bool = False) -> dict:
             if not text_clean:
                 continue
 
-            x_coords = [pt[0] for pt in bbox]
-            y_coords = [pt[1] for pt in bbox]
+            # Scale coordinates back down to match the original image size
+            x_coords = [pt[0] / scale for pt in bbox]
+            y_coords = [pt[1] / scale for pt in bbox]
             x1, y1 = int(min(x_coords)), int(min(y_coords))
             x2, y2 = int(max(x_coords)), int(max(y_coords))
 
@@ -200,25 +229,35 @@ def draw_bounding_boxes(image_path: str, ocr_result: dict, output_path: str = "o
 
 
 if __name__ == "__main__":
-    import sys
-    import json
-
-    target_image = (
-        sys.argv[1] 
-        if len(sys.argv) > 1 
-        else "/workspaces/VEDA-Verifiable-Evidence-Digital-Authenticity/test_images/fake/U.S._passport_card.jpg"
+    # Setup argparse for robust terminal inputs
+    parser = argparse.ArgumentParser(description="Extract text and MRZ from an image using EasyOCR.")
+    parser.add_argument(
+        "-i", "--image", 
+        required=True, 
+        help="Path to the target image (e.g., test_images/sample.jpg)"
     )
+    parser.add_argument(
+        "--gpu", 
+        action="store_true", 
+        help="Enable GPU acceleration for EasyOCR"
+    )
+    
+    args = parser.parse_args()
 
-    result = extract_text(target_image)
+    # Pass the arguments to the extraction function
+    result = extract_text(args.image, gpu=args.gpu)
     
     print("\n--- OCR EXTRACTION SUMMARY ---")
-    print("Document Text Summary:")
-    for idx, line in enumerate(result.get("lines", []), 1):
-        print(f"  Line {idx:02d}: {line}")
+    if result["status"] == "failed":
+        print(f"Extraction Failed: {result['explanation']}")
+    else:
+        print("Document Text Summary:")
+        for idx, line in enumerate(result.get("lines", []), 1):
+            print(f"  Line {idx:02d}: {line}")
+            
+        print("\nMRZ Candidate Lines Found:", result.get("mrz_lines", []))
+        print(f"Total Tokens Extracted: {len(result.get('fields', []))}")
+        print(f"Average Confidence: {result.get('confidence', 0.0)}")
         
-    print("\nMRZ Candidate Lines Found:", result.get("mrz_lines", []))
-    print(f"Total Tokens Extracted: {len(result.get('fields', []))}")
-    print(f"Average Confidence: {result.get('confidence', 0.0)}")
-    
-    # Save visual debug output
-    draw_bounding_boxes(target_image, result)
+        # Save visual debug output using the original image path
+        draw_bounding_boxes(args.image, result)
