@@ -206,7 +206,7 @@ if __name__ == "__main__":
     target_image = (
         sys.argv[1] 
         if len(sys.argv) > 1 
-        else "/workspaces/VEDA-Verifiable-Evidence-Digital-Authenticity/kavach_text/passport2.jpg"
+        else "/workspaces/VEDA-Verifiable-Evidence-Digital-Authenticity/test_images/fake/U.S._passport_card.jpg"
     )
 
     result = extract_text(target_image)
