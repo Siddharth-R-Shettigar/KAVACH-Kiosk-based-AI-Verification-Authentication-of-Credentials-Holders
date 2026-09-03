@@ -7,11 +7,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from detectors.gemini_key_pool import (
-    get_next_gemini_key,
-    mark_key_cooling,
-    gemini_model_name,
-)
+try:
+    from detectors.gemini_key_pool import (
+        get_next_gemini_key,
+        mark_key_cooling,
+        gemini_model_name,
+    )
+except ModuleNotFoundError:
+    from gemini_key_pool import (
+        get_next_gemini_key,
+        mark_key_cooling,
+        gemini_model_name,
+    )
 
 
 def _mime_for(path: str) -> str:
