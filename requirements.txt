@@ -13,3 +13,4 @@ insightface
 onnxruntime
 easyocr
 pyzbar
+paddleocr
