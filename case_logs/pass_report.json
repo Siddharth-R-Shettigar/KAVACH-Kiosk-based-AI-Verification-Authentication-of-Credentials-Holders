@@ -3,51 +3,417 @@
   "file_analyzed": "pass.jpg",
   "live_image": null,
   "risk_level": "REVIEW",
-  "risk_reason": "Critical checks not available: ocr_extraction, mrz_parser, ocr_mrz_consistency.",
-  "forensic_risk_score": 0.414,
+  "risk_reason": "Combined forensic risk is moderate.",
+  "forensic_risk_score": 0.404,
   "active_detectors_evaluated": 25,
   "detector_signals": [
     {
       "detector_name": "ocr_extraction",
-      "score": 0.5,
-      "confidence": "low",
-      "explanation": "OCR extraction error: Unknown argument: use_gpu",
-      "status": "failed",
-      "fields": [],
-      "mrz_lines": []
+      "score": 0.0,
+      "confidence": "high",
+      "explanation": "Extracted 31 tokens. Found 1 MRZ candidates.",
+      "status": "passed",
+      "fields": [
+        {
+          "text": "PASSPORT",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "UNITEDSTATESOFAMERICA",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "PASSEPORT",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "PASAPORTE",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Type/Type/Tipo Code/Code/Codigo Passport No./No. du Passeport/No de Pasaporte",
+          "confidence": 0.985,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "P",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "USA",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "910239248",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Surname / Nom / Apellidos",
+          "confidence": 0.976,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "DELAPAZ",
+          "confidence": 0.999,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Given Names/Pr\u00e9noms/Nombres",
+          "confidence": 0.999,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "MICHELLE",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Nationality / Nationalit\u00e9it\u00e9/Nacionalidad",
+          "confidence": 0.984,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "UNITED STATES OF AMERICA",
+          "confidence": 0.999,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Date of birth/Date de naissance/ Fecha de nacimiento",
+          "confidence": 0.985,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "07 Aug 1999",
+          "confidence": 0.968,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Place of birth / Lieu de naissance / Lugar de nacimiento",
+          "confidence": 0.985,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Sex/Sexe/Sexo",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "CALIFORNIA, U.S.A.",
+          "confidence": 0.972,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "\u00c8",
+          "confidence": 0.877,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Date of issue / Date de d\u00e9livrance / Fecha de expedici\u00f3n",
+          "confidence": 0.992,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Authority/Autorit\u00e9/Autoridad",
+          "confidence": 0.999,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "06 Feb 2008",
+          "confidence": 0.998,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "United States",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Date of expiration/Date d'expiration/Fecha de caducidad",
+          "confidence": 0.998,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Department of State",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "05 Feb 2018",
+          "confidence": 0.977,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "Endorsements/Mentions Sp\u00e9ciales/Anotaciones",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "SEEPAGE27",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "P<DELAPAZ<<MICHELLE<<<<<<<<<<<<<<<<<<<<<<<<",
+          "confidence": 0.919,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        },
+        {
+          "text": "9102392482USA6401171F1812051900781200<129676",
+          "confidence": 1.0,
+          "bounding_box": {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0,
+            "y2": 0
+          }
+        }
+      ],
+      "mrz_lines": [
+        "P<DELAPAZ<<MICHELLE<<<<<<<<<<<<<<<<<<<<<<<<"
+      ]
     },
     {
       "detector_name": "mrz_parser",
-      "score": 0.5,
-      "confidence": "low",
-      "explanation": "Could not build two MRZ lines from OCR (got 0: []).",
-      "status": "unavailable",
-      "fields": {},
-      "issues": [
-        "Two MRZ lines are required."
-      ]
+      "score": 0.0,
+      "confidence": "high",
+      "explanation": "All MRZ check digits valid.",
+      "status": "passed",
+      "fields": {
+        "doc_type": "P",
+        "country_code": "DEL",
+        "surname": "APAZ",
+        "given_names": "MICHELLE",
+        "passport_number": "910239248",
+        "nationality": "USA",
+        "dob": "640117",
+        "sex": "F",
+        "expiry": "181205",
+        "personal_number": "9007812001296",
+        "check_digit_results": {
+          "passport_number": "PASS",
+          "dob": "PASS",
+          "expiry": "PASS",
+          "personal_number": "PASS",
+          "composite": "PASS"
+        },
+        "date_validity_results": {
+          "dob": "PASS",
+          "expiry": "PASS"
+        }
+      },
+      "issues": []
     },
     {
       "detector_name": "document_classifier",
       "score": 0.25,
-      "confidence": "medium",
-      "explanation": "Classified as passport (score 0.35).",
+      "confidence": "high",
+      "explanation": "Classified as 'passport' (score 0.66). Matched 3 keyword(s).",
       "status": "passed",
       "doc_type": "passport"
     },
     {
       "detector_name": "field_validator",
-      "score": 0.5,
-      "confidence": "low",
-      "explanation": "Skipped; no MRZ fields available.",
-      "status": "unavailable"
+      "score": 0.7,
+      "confidence": "high",
+      "explanation": "Validation failures: passport_number, expiry",
+      "status": "flagged",
+      "field_results": [
+        {
+          "field": "passport_number",
+          "status": "flagged",
+          "value": "910239248",
+          "explanation": "Passport number '910239248' is INVALID (expected 1 letter + 7 digits)."
+        },
+        {
+          "field": "dob",
+          "status": "passed",
+          "value": "1964-01-17",
+          "explanation": "DOB 1964-01-17 is valid (age ~62)."
+        },
+        {
+          "field": "expiry",
+          "status": "flagged",
+          "value": "2018-12-05",
+          "explanation": "Document EXPIRED on 2018-12-05."
+        },
+        {
+          "field": "sex",
+          "status": "passed",
+          "value": "F",
+          "explanation": "Sex 'F' is valid."
+        },
+        {
+          "field": "country_code",
+          "status": "passed",
+          "value": "DEL",
+          "explanation": "Country code 'DEL' is valid."
+        }
+      ]
     },
     {
       "detector_name": "ocr_mrz_consistency",
-      "score": 0.5,
-      "confidence": "low",
-      "explanation": "Skipped; need OCR fields + MRZ fields.",
-      "status": "unavailable"
+      "score": 0.0,
+      "confidence": "high",
+      "explanation": "All OCR and MRZ fields match.",
+      "status": "passed",
+      "mismatches": []
     },
     {
       "detector_name": "national_id_validator",
@@ -156,9 +522,9 @@
     },
     {
       "detector_name": "vision_llm_sanity_analysis",
-      "score": 1.0,
+      "score": 0.9,
       "confidence": "high",
-      "explanation": "The document displays critical inconsistencies: the printed date of birth (07 Aug 1999) and date of expiration (05 Feb 2018) do not match the machine-readable zone's corresponding dates (17 Jan 1964 and 05 Dec 2018). The photograph also appears digitally overlaid, and some text shows signs of digital manipulation.",
+      "explanation": "The document shows significant signs of fraud: the photo depicts an adult but the date of issue indicates the passport was issued when the holder was 8 years old. Additionally, there are multiple inconsistencies between the visually presented dates (DOB, DOE) and the Machine Readable Zone (MRZ) dates, including a miscalculated check digit in the MRZ's expiration date.",
       "status": "flagged"
     },
     {

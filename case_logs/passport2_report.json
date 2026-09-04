@@ -4,8 +4,8 @@
   "live_image": null,
   "risk_level": "REVIEW",
   "risk_reason": "Critical checks not available: ocr_extraction, mrz_parser, ocr_mrz_consistency.",
-  "forensic_risk_score": 0.331,
-  "active_detectors_evaluated": 25,
+  "forensic_risk_score": 0.283,
+  "active_detectors_evaluated": 24,
   "detector_signals": [
     {
       "detector_name": "ocr_extraction",
@@ -24,14 +24,6 @@
       "issues": [
         "Two MRZ lines are required."
       ]
-    },
-    {
-      "detector_name": "document_classifier",
-      "score": 0.25,
-      "confidence": "medium",
-      "explanation": "Classified as id_card (score 0.35).",
-      "status": "passed",
-      "doc_type": "id_card"
     },
     {
       "detector_name": "field_validator",
@@ -70,10 +62,10 @@
     },
     {
       "detector_name": "cfa_demosaicing_analysis",
-      "score": 0.85,
-      "confidence": "medium",
-      "explanation": "Bayer CFA grid residual ratio computed at 8.61. Lacks physical camera Bayer filter demosaicing signature.",
-      "status": "flagged"
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Detector unavailable (import or call failed).",
+      "status": "unavailable"
     },
     {
       "detector_name": "hf_vision_transformer",
@@ -84,10 +76,10 @@
     },
     {
       "detector_name": "resampling_interpolation_analysis",
-      "score": 0.8,
-      "confidence": "medium",
-      "explanation": "Periodic interpolation artifacts detected (metric: 547.29). Image shows signs of AI upscaling or non-native resampling.",
-      "status": "flagged"
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Detector unavailable (import or call failed).",
+      "status": "unavailable"
     },
     {
       "detector_name": "ela_compression",
@@ -98,31 +90,31 @@
     },
     {
       "detector_name": "histogram_color_forensics",
-      "score": 0.15,
-      "confidence": "medium",
-      "explanation": "Color channel entropy computed at 6.19 bits. Standard natural RGB channel distribution.",
-      "status": "passed"
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Detector unavailable (import or call failed).",
+      "status": "unavailable"
     },
     {
       "detector_name": "frequency_domain_fft",
-      "score": 0.8,
-      "confidence": "medium",
-      "explanation": "FFT spectral power calculated at 143.81 dB. High-frequency grid noise detected.",
-      "status": "flagged"
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Detector unavailable (import or call failed).",
+      "status": "unavailable"
     },
     {
       "detector_name": "copy_move_forgery",
-      "score": 0.0,
-      "confidence": "medium",
-      "explanation": "Found 0 suspicious duplicated feature clusters. No duplicate region cloning detected.",
-      "status": "passed"
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Detector unavailable (import or call failed).",
+      "status": "unavailable"
     },
     {
       "detector_name": "blur_sharpness_analysis",
-      "score": 0.15,
-      "confidence": "medium",
-      "explanation": "Standard physical lens focus distribution (sharpness metric: 386.63).",
-      "status": "passed"
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Detector unavailable (import or call failed).",
+      "status": "unavailable"
     },
     {
       "detector_name": "perceptual_hashing",
@@ -146,25 +138,25 @@
       "status": "flagged"
     },
     {
-      "detector_name": "inpainting_trace_analysis",
-      "score": 0.15,
-      "confidence": "medium",
-      "explanation": "Inpainting edge boundary dispersion ratio computed at 1.89. Uniform pixel edge continuity verified across image patches.",
-      "status": "passed"
+      "detector_name": "inpainting",
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Detector unavailable (import or call failed).",
+      "status": "unavailable"
     },
     {
       "detector_name": "vision_llm_sanity_analysis",
-      "score": 0.15,
-      "confidence": "high",
-      "explanation": "The document shows high internal consistency between visual data fields and the MRZ, with no obvious signs of a pasted photograph or altered dates/numbers. There is a slight misalignment of the top title, but it does not indicate data tampering.",
-      "status": "passed"
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Vision LLM unavailable after key rotation. Last error: No candidates: {\"error\": {\"code\": 503, \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\", \"status\": \"UNAVAILABLE\"}, \"_http_status\": 503}",
+      "status": "unavailable"
     },
     {
       "detector_name": "photo_patch_forensics",
-      "score": 0.11,
-      "confidence": "high",
-      "explanation": "Photo-patch forensics on document face crop. ELA score=0.02 (Error Level Analysis computed pixel difference variance of 0.37.). Resampling score=0.2 (Standard organic pixel continuity verified (metric: 44.13).).",
-      "status": "passed"
+      "score": 0.5,
+      "confidence": "low",
+      "explanation": "Detector unavailable (import or call failed).",
+      "status": "unavailable"
     },
     {
       "detector_name": "face_verification",

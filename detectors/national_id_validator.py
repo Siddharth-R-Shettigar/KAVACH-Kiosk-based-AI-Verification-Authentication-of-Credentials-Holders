@@ -1,16 +1,9 @@
-# kavach/national_id_validator.py
+# detectors/national_id_validator.py
 
 import re
 
 
-# --- Aadhaar ---
-
 def verhoeff_check(number: str) -> bool:
-    """
-    Verhoeff algorithm — used by Aadhaar for its check digit.
-    Returns True if the number is valid.
-    """
-    # Multiplication table
     d = [
         [0,1,2,3,4,5,6,7,8,9],
         [1,2,3,4,0,6,7,8,9,5],
@@ -23,7 +16,6 @@ def verhoeff_check(number: str) -> bool:
         [8,7,6,5,9,3,2,1,0,4],
         [9,8,7,6,5,4,3,2,1,0]
     ]
-    # Permutation table
     p = [
         [0,1,2,3,4,5,6,7,8,9],
         [1,5,7,6,2,8,3,0,9,4],
@@ -34,7 +26,6 @@ def verhoeff_check(number: str) -> bool:
         [2,7,9,3,8,0,6,4,1,5],
         [7,0,4,6,9,1,3,2,5,8]
     ]
-    # Inverse table
     inv = [0,4,3,2,1,9,8,7,6,5]
 
     c = 0
@@ -45,57 +36,56 @@ def verhoeff_check(number: str) -> bool:
 
 
 def validate_aadhaar(aadhaar: str) -> dict:
-    """Validates an Aadhaar number (12 digits)."""
     clean = re.sub(r'[\s-]', '', aadhaar)
 
     if not re.match(r'^\d{12}$', clean):
         return {
             "id_type": "aadhaar",
             "status": "flagged",
+            "score": 0.0,
+            "verdict": "INVALID",
             "value": aadhaar,
             "explanation": "Aadhaar must be exactly 12 digits."
         }
 
-    # First digit cannot be 0 or 1
     if clean[0] in ('0', '1'):
         return {
             "id_type": "aadhaar",
             "status": "flagged",
+            "score": 0.2,
+            "verdict": "INVALID",
             "value": aadhaar,
             "explanation": "Aadhaar first digit cannot be 0 or 1."
         }
 
-    valid_checksum = verhoeff_check(clean)
+    valid = verhoeff_check(clean)
 
     return {
         "id_type": "aadhaar",
-        "status": "passed" if valid_checksum else "flagged",
+        "status": "passed" if valid else "flagged",
+        "score": 1.0 if valid else 0.3,
+        "verdict": "VALID" if valid else "SUSPICIOUS / INVALID",
         "value": aadhaar,
         "explanation": (
-            "Aadhaar number format and checksum are valid."
-            if valid_checksum
-            else "Aadhaar checksum is INVALID — number may be fabricated."
+            "Aadhaar number and checksum are valid."
+            if valid else
+            "Aadhaar checksum failed — number is likely fabricated."
         )
     }
 
 
-# --- PAN ---
-
 def validate_pan(pan: str) -> dict:
-    """
-    Validates an Indian PAN card number.
-    Format: 5 letters + 4 digits + 1 letter
-    4th letter encodes taxpayer type, 5th letter is surname initial.
-    """
     clean = pan.upper().strip()
-    pattern = r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$'
+    pattern = r'^[A-Z]{5}[0-9]{4}[A-Z]$'
 
     if not re.match(pattern, clean):
         return {
             "id_type": "pan",
             "status": "flagged",
+            "score": 0.0,
+            "verdict": "INVALID",
             "value": pan,
-            "explanation": f"PAN '{pan}' format invalid. Expected: 5 letters + 4 digits + 1 letter."
+            "explanation": "PAN format invalid. Expected: 5 letters + 4 digits + 1 letter."
         }
 
     valid_types = {'P', 'C', 'H', 'F', 'A', 'T', 'B', 'L', 'J', 'G'}
@@ -105,24 +95,23 @@ def validate_pan(pan: str) -> dict:
         return {
             "id_type": "pan",
             "status": "flagged",
+            "score": 0.4,
+            "verdict": "SUSPICIOUS",
             "value": pan,
-            "explanation": f"PAN 4th character '{type_char}' is not a valid taxpayer type."
+            "explanation": f"4th character '{type_char}' is not a valid taxpayer type."
         }
 
     return {
         "id_type": "pan",
         "status": "passed",
+        "score": 1.0,
+        "verdict": "VALID",
         "value": pan,
-        "explanation": f"PAN '{pan}' format is valid. Taxpayer type: '{type_char}'."
+        "explanation": f"PAN format is valid. Taxpayer type: '{type_char}'."
     }
 
 
-# --- Router ---
-
 def validate_national_id(id_type: str, id_value: str) -> dict:
-    """
-    Main entry point. Pass id_type as 'aadhaar' or 'pan'.
-    """
     id_type = id_type.lower().strip()
 
     if id_type == "aadhaar":
@@ -133,13 +122,8 @@ def validate_national_id(id_type: str, id_value: str) -> dict:
         return {
             "id_type": id_type,
             "status": "unavailable",
+            "score": 0.0,
+            "verdict": "UNSUPPORTED",
             "value": id_value,
-            "explanation": f"No validator implemented for ID type '{id_type}'."
+            "explanation": f"No validator for ID type '{id_type}'."
         }
-
-
-if __name__ == "__main__":
-    import json
-    
-    # Test valid PAN structure (Individual 'P')
-    print(json.dumps(validate_national_id("pan", "ABCPE1234F"), indent=2))
